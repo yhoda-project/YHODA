@@ -112,9 +112,7 @@ class Indicator(Base):
     dataset_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
     """Dataset / series code within the source system."""
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
     )
@@ -154,9 +152,7 @@ class DatasetMetadata(Base):
     )
     """Current lifecycle state of this extraction run."""
 
-    prefect_flow_run_id: Mapped[str | None] = mapped_column(
-        String(36), nullable=True
-    )
+    prefect_flow_run_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     """UUID of the Prefect flow run, for cross-referencing in the Prefect UI."""
 
     rows_extracted: Mapped[int | None] = mapped_column(nullable=True)
@@ -171,9 +167,7 @@ class DatasetMetadata(Base):
     extracted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     loaded_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
 
 
 class GeoLookup(Base):
