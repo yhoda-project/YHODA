@@ -153,6 +153,13 @@ Before opening a pull request, confirm that:
 
 ---
 
+## Releases
+
+Releases are automated via release-please and Conventional Commits — no manual version bumping
+is needed. See [RELEASING.md](RELEASING.md) for the full workflow.
+
+---
+
 ## Getting help
 
 Open a GitHub Discussion or tag `@team-data-engineering` in your PR.
