@@ -95,4 +95,4 @@ jobs:
         run: uv sync --extra dev
 
       - name: Deploy all Prefect deployments
-        run: uv run prefect deploy --all --no-prompt
+        run: uv run prefect deploy --all
