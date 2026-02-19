@@ -110,4 +110,4 @@ def get_settings() -> Settings:
         pydantic_core.ValidationError: If required environment variables are
             absent or have invalid values.
     """
-    return Settings()
+    return Settings()  # type: ignore[call-arg]

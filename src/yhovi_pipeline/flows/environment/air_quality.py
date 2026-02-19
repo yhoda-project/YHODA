@@ -16,7 +16,7 @@ from prefect.task_runners import ThreadPoolTaskRunner
     description="Extract DEFRA AURN air quality data for Yorkshire LADs.",
     retries=1,
     retry_delay_seconds=300,
-    task_runner=ThreadPoolTaskRunner(max_workers=4),
+    task_runner=ThreadPoolTaskRunner(max_workers=4),  # type: ignore[arg-type]
 )
 def air_quality_flow() -> None:
     """Orchestrate the air quality ETL pipeline.

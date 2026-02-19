@@ -15,7 +15,7 @@ from prefect.task_runners import ThreadPoolTaskRunner
     description="Extract employment and jobs data from NOMIS for Yorkshire LADs.",
     retries=1,
     retry_delay_seconds=300,
-    task_runner=ThreadPoolTaskRunner(max_workers=4),
+    task_runner=ThreadPoolTaskRunner(max_workers=4),  # type: ignore[arg-type]
 )
 def employment_jobs_flow() -> None:
     """Orchestrate the employment & jobs ETL pipeline.

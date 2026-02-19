@@ -14,7 +14,7 @@ from prefect.task_runners import ThreadPoolTaskRunner
     name="orchestrator/full-refresh",
     description="Run all YHODA domain flows in sequence.",
     retries=0,
-    task_runner=ThreadPoolTaskRunner(max_workers=1),
+    task_runner=ThreadPoolTaskRunner(max_workers=1),  # type: ignore[arg-type]
 )
 def full_refresh_flow() -> None:
     """Trigger all economy, society, and environment flows.
