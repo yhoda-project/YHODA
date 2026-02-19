@@ -1,0 +1,36 @@
+# Prefect deployment upload exclusions
+# These paths are excluded when Prefect uploads code to storage.
+
+# Secrets — never upload
+.env
+*.env.local
+
+# Test directories
+tests/
+
+# Build artefacts
+build/
+dist/
+*.egg-info/
+__pycache__/
+*.pyc
+
+# Development tools
+.venv/
+.tox/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# Data files
+data/
+
+# Docs
+docs/
+
+# CI
+.github/
