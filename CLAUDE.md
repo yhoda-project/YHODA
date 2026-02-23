@@ -4,18 +4,64 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-YHODA (Yorkshire Health Observatory Data Aggregator) is a **Prefect v3 ETL pipeline** that collects, transforms, and warehouses socioeconomic, health, and environmental indicators for all 22 Yorkshire Local Authority Districts (LADs) into a SQL Server data warehouse.
+YHODA (Yorkshire & Humber Office for Data Analytics) is a **Prefect v3 ETL pipeline** that collects, transforms, and warehouses socioeconomic, health, and environmental indicators for all 22 Yorkshire Local Authority Districts (LADs) into a SQL Server data warehouse. The pipeline supports the [Yorkshire Engagement Portal](https://yorkshireportal.org/) and its [Yorkshire Vitality Suite](https://yorkshireportal.org/vitality-suite) dashboards.
 
 **Current Status:** Phase 1 complete (scaffolding). Phase 2 (implementation) is pending — all flow and task bodies contain `# TODO: implement` stubs.
+
+## Project Context
+
+### Background
+
+YHODA bridges a gap for Yorkshire policymakers who want data-informed decisions but lack technical infrastructure. Currently, dashboards rely on manual data collection via R scripts and CSV files — time-consuming, error-prone, and not scalable. This pipeline automates 70–80% of those workflows.
+
+As the UK's first Regional Office for Data Analytics, YHODA aims to become a national exemplar for evidence-based regional policy.
+
+### Timeline (Jan–Jun 2026)
+
+| Target | Milestone |
+|--------|-----------|
+| Mid-Feb 2026 | Discovery & design — audit workflows, select priority datasets, draft schema |
+| End-Apr 2026 | Prototype ingestion — working API connectors for Nomis/ONS and one DWP dataset |
+| End-May 2026 | Scale-out — extend to most priority datasets, improve validation and error handling |
+| End-Jun 2026 | Handover — documentation, runbooks, training for YHODA team to maintain independently |
+
+### Key Constraints
+
+- **Geography fragmentation:** Datasets use different boundaries (LAD, LSOA, MSOA, OA). A canonical mapping layer is needed.
+- **API credentials:** Nomis/ONS and DWP API access not yet registered.
+- **Handover:** Code must be clear enough for a less-technical team to maintain post-project.
+- **Scope:** ~40 priority datasets to automate; may narrow if timeline is tight.
+
+### Data Sources
+
+| Source | Data | API |
+|--------|------|-----|
+| NOMIS | Labour market (BRES, APS) | Nomis API |
+| ONS | GVA, demography, census | ONS Open Data |
+| DWP | Claimant count | Stat-Xplore API |
+| NHS Fingertips | Health outcomes | Fingertips API |
+| Sport England | Active Lives | TBC |
+| Ofcom | Digital connectivity | Connected Nations |
+| DEFRA | Air quality | AURN API |
+| BEIS/DESNZ | Energy consumption | TBC |
+
+### Useful Links
+
+- Yorkshire Portal: https://yorkshireportal.org/
+- Vitality Suite: https://yorkshireportal.org/vitality-suite
+- YHODA: https://yhoda.sites.sheffield.ac.uk/about-us
+- Nomis API docs: https://www.nomisweb.co.uk/api/v01/help
 
 ## Commands
 
 **Install dependencies:**
+
 ```bash
 uv sync --extra dev
 ```
 
 **Lint and type-check:**
+
 ```bash
 uv run ruff check src/ tests/          # Lint
 uv run ruff check --fix src/ tests/    # Auto-fix
@@ -24,6 +70,7 @@ uv run mypy src/                       # Type check
 ```
 
 **Run tests:**
+
 ```bash
 uv run pytest                                        # All tests
 uv run pytest tests/unit/                            # Unit tests only
@@ -32,6 +79,7 @@ uv run pytest --cov=src/yhovi_pipeline               # With coverage
 ```
 
 Unit tests require env vars (no real DB needed):
+
 ```bash
 export SQL_SERVER_CONNECTION_STRING="mssql+pyodbc://t:t@h/d"
 export DWP_API_KEY="x"
@@ -39,6 +87,7 @@ uv run pytest tests/unit/
 ```
 
 **Database migrations:**
+
 ```bash
 uv run alembic upgrade head
 uv run alembic revision --autogenerate -m "describe change"
@@ -46,6 +95,7 @@ uv run alembic downgrade -1
 ```
 
 **Prefect deployments:**
+
 ```bash
 uv run prefect deploy --all --no-prompt
 ```
@@ -53,6 +103,7 @@ uv run prefect deploy --all --no-prompt
 ## Architecture
 
 ### Data Flow
+
 ```
 8 Source APIs → extract/ tasks → transform/ tasks (validate → normalise → geo) → load/ tasks → SQL Server
 ```

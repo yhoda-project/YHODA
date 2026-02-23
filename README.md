@@ -1,6 +1,6 @@
 # Yorkshire Vitality Observatory — ETL Pipeline
 
-> **YHODA** — Yorkshire Health & Opportunity Data Architecture
+> **YHODA** — Yorkshire & Humber Office for Data Analytics
 > A Prefect v3 pipeline that collects, transforms, and warehouses socioeconomic,
 > health, and environmental indicators for all 22 Yorkshire Local Authority Districts.
 
