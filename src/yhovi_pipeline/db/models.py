@@ -5,9 +5,9 @@ Design notes
 * Uses the new annotation-driven ``Mapped[T]`` / ``mapped_column()`` style
   (not the legacy ``Column(...)`` API).
 * ``MetaData`` is initialised with a naming convention so Alembic can generate
-  stable, deterministic constraint names for SQL Server.
-* All ``Enum`` columns use ``native_enum=False`` because SQL Server does not
-  support a native ENUM type.
+  stable, deterministic constraint names across databases.
+* All ``Enum`` columns use ``native_enum=False`` to keep the schema portable
+  across database backends.
 * The ``Indicator`` table has a unique index on ``(indicator_id, lad_code,
   reference_period)`` — this triple is the upsert key used by load tasks.
 * ``GeoLookup`` maps LSOA codes → MSOA → LAD → Region, matching the ONS
@@ -32,8 +32,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 # ---------------------------------------------------------------------------
 # Naming convention — ensures Alembic generates deterministic constraint names
-# on SQL Server (which requires explicit names for FK / CHECK / UQ constraints
-# when using autogenerate).
+# (explicit names are required for reliable autogenerate on all backends).
 # ---------------------------------------------------------------------------
 
 NAMING_CONVENTION: dict[str, str] = {

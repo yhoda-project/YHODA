@@ -1,7 +1,7 @@
-"""SQL Server load tasks.
+"""PostgreSQL load tasks.
 
-Writes normalised ``Indicator`` rows to the SQL Server data warehouse using
-an idempotent upsert strategy (MERGE or DELETE + INSERT).
+Writes normalised ``Indicator`` rows to the PostgreSQL data warehouse using
+an idempotent upsert strategy (INSERT … ON CONFLICT UPDATE).
 """
 
 from __future__ import annotations
@@ -13,8 +13,8 @@ from yhovi_pipeline.db.models import ExtractionStatus
 
 
 @task(
-    name="load/sql-server/upsert-indicators",
-    description="Upsert a normalised Indicator DataFrame into the SQL Server data warehouse.",
+    name="load/database/upsert-indicators",
+    description="Upsert a normalised Indicator DataFrame into the PostgreSQL data warehouse.",
 )
 def upsert_indicators(df: pd.DataFrame, dataset_code: str) -> int:
     """Upsert rows into the ``indicator`` table.
@@ -31,12 +31,12 @@ def upsert_indicators(df: pd.DataFrame, dataset_code: str) -> int:
     """
     # TODO: implement
     # settings = get_settings()
-    # engine = create_engine(settings.sql_server_connection_string.get_secret_value())
+    # engine = create_engine(settings.database_url.get_secret_value())
     raise NotImplementedError("upsert_indicators not yet implemented")
 
 
 @task(
-    name="load/sql-server/write-metadata",
+    name="load/database/write-metadata",
     description="Write a DatasetMetadata audit record to the data warehouse.",
 )
 def write_metadata(

@@ -71,11 +71,11 @@ class Settings(BaseSettings):
     )
 
     # Database ---------------------------------------------------------------
-    sql_server_connection_string: SecretStr
-    """SQLAlchemy connection URL for the SQL Server data warehouse.
+    database_url: SecretStr
+    """SQLAlchemy connection URL for the PostgreSQL data warehouse.
 
     Example:
-        mssql+pyodbc://user:pass@host/db?driver=ODBC+Driver+18+for+SQL+Server
+        postgresql+psycopg2://user:pass@host:5432/dbname
     """
 
     # API keys ---------------------------------------------------------------

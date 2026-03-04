@@ -25,10 +25,10 @@ graph TD
         direction TB
         EXT[Extract Tasks]
         XFORM[Transform Tasks\nvalidate · geo aggregate · normalise]
-        LOAD[Load Tasks\nSQL Server upsert]
+        LOAD[Load Tasks\nPostgreSQL upsert]
     end
 
-    subgraph Warehouse["SQL Server Data Warehouse"]
+    subgraph Warehouse["PostgreSQL Data Warehouse"]
         IND[(indicator)]
         META[(dataset_metadata)]
         GEO[(geo_lookup)]
@@ -55,9 +55,8 @@ All 13 deployments run on the first of each month at 06:00 Europe/London.
 
 - Python 3.11+
 - [`uv`](https://github.com/astral-sh/uv) package manager
-- SQL Server (or Azure SQL) instance with the target database created
+- PostgreSQL 14+ instance with the target database created
 - Self-hosted Prefect v3 server (`PREFECT_API_URL`)
-- ODBC Driver 18 for SQL Server
 
 ### 1. Clone and install
 
@@ -105,7 +104,7 @@ uv run pytest
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `SQL_SERVER_CONNECTION_STRING` | **Yes** | — | SQLAlchemy pyodbc URL for the data warehouse |
+| `DATABASE_URL` | **Yes** | — | SQLAlchemy psycopg2 URL for the PostgreSQL data warehouse |
 | `DWP_API_KEY` | **Yes** | — | DWP Stat-Xplore API key |
 | `NOMIS_API_KEY` | No | `None` | NOMIS API key (public endpoints work without one) |
 | `PREFECT_API_URL` | **Yes** | — | URL of your self-hosted Prefect server |
@@ -134,7 +133,7 @@ YHODA/
 │       ├── tasks/
 │       │   ├── extract/           # nomis, ons, dwp, fingertips, sport_england, ofcom, defra, beis
 │       │   ├── transform/         # geo, validate, normalise
-│       │   └── load/              # sql_server
+│       │   └── load/              # database
 │       └── utils/                 # logging, metadata, geo_lookups
 ├── tests/
 │   ├── conftest.py                # test_settings fixture
