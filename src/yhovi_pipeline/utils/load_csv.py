@@ -14,12 +14,12 @@ Or import and call ``load_dataset()`` directly.
 
 from __future__ import annotations
 
-from datetime import date
+import re
+from datetime import date, datetime
 
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from datetime import datetime
 
 from yhovi_pipeline.config import YORKSHIRE_LAD_CODES, get_settings
 from yhovi_pipeline.db.models import Indicator
@@ -266,6 +266,20 @@ DATASET_REGISTRY: dict[str, dict] = {
         "source": "dluhc",
         "subdomain": "Housing",
     },
+    "eejpip": {
+        "indicator_id": "disability_benefits_per_100k",
+        "indicator_name": "Number of people with disability benefits (PIP) per 100,000 residents",
+        "unit": "per 100k",
+        "source": "dwp",
+        "subdomain": "Employment and Jobs",
+    },
+    "sheu75": {
+        "indicator_id": "under75_preventable_mortality_rate",
+        "indicator_name": "Under 75 mortality rate from preventable causes (per 100,000)",
+        "unit": "per 100k",
+        "source": "phe",
+        "subdomain": "Health",
+    },
 }
 
 
@@ -280,6 +294,16 @@ def read_wide_csv(path: str) -> pd.DataFrame:
     return pd.read_csv(path)
 
 
+def _extract_year(col: str) -> int:
+    """Extract the last 4-digit year from a column name.
+
+    Handles plain years ("2022") and date-range strings
+    ("April 2011 to March 2012" → 2012).
+    """
+    years = re.findall(r"\b(\d{4})\b", str(col))
+    return int(years[-1])
+
+
 def wide_to_long(df: pd.DataFrame, dataset_code: str) -> pd.DataFrame:
     """Transform a wide-format DataFrame into the Indicator long format.
 
@@ -292,6 +316,13 @@ def wide_to_long(df: pd.DataFrame, dataset_code: str) -> pd.DataFrame:
     """
     meta = DATASET_REGISTRY[dataset_code]
 
+    # Normalise non-standard column names produced by some preprocessing scripts
+    df = df.rename(columns={
+        "LAD_Name.x": "LAD_Name",
+        "Area Names": "LAD_Name",
+        "Area Codes": "LAD_Code",
+    })
+
     year_cols = [c for c in df.columns if c not in ("LAD_Name", "LAD_Code")]
 
     long = df.melt(
@@ -301,7 +332,7 @@ def wide_to_long(df: pd.DataFrame, dataset_code: str) -> pd.DataFrame:
         value_name="value",
     )
 
-    long["year"] = long["year"].astype(int)
+    long["year"] = long["year"].apply(_extract_year)
     long = long[long["LAD_Code"].isin(YORKSHIRE_LAD_CODES)]
     long = long.dropna(subset=["value"])
 
@@ -403,6 +434,8 @@ CSV_FILES: list[tuple[str, str]] = [
     ("shohar", "shohar/shohar_preprocessed_v1_1.csv"),
     ("shoahc", "shoahc/shoahc_preprocessing_v1_2.csv"),
     ("shohwl", "shohwl/shohwl_preprocessing_v1_2.csv"),
+    ("eejpip", "eejpip/eejpip_preprocessing_v1_5.csv"),
+    ("sheu75", "sheu75/sheu75_preprocessed_v1_2.csv"),
 ]
 
 BASE_PATH = "/mnt/yhoda_drive/Shared/1_Yorkshire_Vitality_Observatory/data_preprocessing"
