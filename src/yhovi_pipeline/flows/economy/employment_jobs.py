@@ -47,7 +47,7 @@ NOMIS_APS_COLUMNS = ["DATE_NAME", "GEOGRAPHY_NAME", "GEOGRAPHY_CODE", "VARIABLE_
 
 
 @flow(
-    name="economy/employment-jobs",
+    name="economy-employment-jobs",
     description="Extract employment and jobs data from NOMIS for Yorkshire LADs.",
     retries=1,
     retry_delay_seconds=300,
