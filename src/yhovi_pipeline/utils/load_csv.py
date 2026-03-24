@@ -182,6 +182,34 @@ DATASET_REGISTRY: dict[str, dict] = {
         "source": "ashe",
         "subdomain": "Earnings and Income",
     },
+    "scpo": {
+        "indicator_id": "public_order_offences_per_1k",
+        "indicator_name": "Public order offences per 1,000 people",
+        "unit": "per 1k",
+        "source": "ons",
+        "subdomain": "Crime",
+    },
+    "scp": {
+        "indicator_id": "child_poverty_pct",
+        "indicator_name": "Percentage of children in relative low income households",
+        "unit": "%",
+        "source": "dwp",
+        "subdomain": "Society",
+    },
+    "shomee": {
+        "indicator_id": "median_energy_efficiency_score",
+        "indicator_name": "Median energy efficiency score of households",
+        "unit": "score",
+        "source": "beis",
+        "subdomain": "Housing",
+    },
+    "eeicli": {
+        "indicator_id": "claimant_count_per_10k",
+        "indicator_name": "Claimant count per 10,000",
+        "unit": "per 10k",
+        "source": "dwp",
+        "subdomain": "Employment and Jobs",
+    },
 }
 
 
@@ -307,6 +335,10 @@ CSV_FILES: list[tuple[str, str]] = [
     ("swwl", "swwl/swwl_preprocessing_v1_1.csv"),
     ("scsv", "scsv/scsv_preprocessing_v1_4.csv"),
     ("eeigwe", "eeigwe/eeigwe_preprocessing_v2.csv"),
+    ("scpo", "scpo/scpo_preprocessing_v1_4.csv"),
+    ("scp", "scp/scp_preprocessing_v1_3.csv"),
+    ("shomee", "shomee/shomee_preprocessing_v1_1.csv"),
+    ("eeicli", "eeicli/eeicli_preprocessed_v1_5.csv"),
 ]
 
 BASE_PATH = "/mnt/yhoda_drive/Shared/1_Yorkshire_Vitality_Observatory/data_preprocessing"
