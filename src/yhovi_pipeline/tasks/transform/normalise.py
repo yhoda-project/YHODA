@@ -27,22 +27,28 @@ def _get_logger():
 def _parse_nomis_date(date_name: str) -> date:
     """Parse a Nomis DATE_NAME string to a date.
 
-    Nomis returns rolling periods like "Jan 2004-Dec 2004" or
-    "Oct 2024-Sep 2025". We take the end date of the period.
+    Handles two formats:
+    - Rolling periods: "Jan 2004-Dec 2004" — returns first day of end month.
+    - Plain years: "2023" — returns 1 Jan of that year (ASHE annual data).
 
     Args:
-        date_name: Nomis DATE_NAME value, e.g. "Jan 2004-Dec 2004".
+        date_name: Nomis DATE_NAME value.
 
     Returns:
-        First day of the end month, e.g. date(2004, 12, 1).
+        A ``date`` representing the reference period.
     """
-    # Extract the end portion after the hyphen
+    # Rolling period: "Jan 2004-Dec 2004"
     match = re.search(r"-\s*(\w{3})\s+(\d{4})", date_name)
-    if not match:
-        raise ValueError(f"Cannot parse Nomis date: {date_name!r}")
+    if match:
+        month_str, year_str = match.group(1), match.group(2)
+        return datetime.strptime(f"01 {month_str} {year_str}", "%d %b %Y").date()
 
-    month_str, year_str = match.group(1), match.group(2)
-    return datetime.strptime(f"01 {month_str} {year_str}", "%d %b %Y").date()
+    # Plain year: "2023"
+    year_match = re.fullmatch(r"\d{4}", date_name.strip())
+    if year_match:
+        return date(int(date_name.strip()), 1, 1)
+
+    raise ValueError(f"Cannot parse Nomis date: {date_name!r}")
 
 
 @task(
@@ -149,4 +155,47 @@ def normalise_nomis_aps(
 
     result = result.dropna(subset=["value"])
     logger.info("Normalised %d rows for %s from Nomis APS", len(result), indicator_id)
+    return result
+
+
+@task(
+    name="transform/normalise/nomis-ashe",
+    description="Normalise a Nomis ASHE API response to the canonical Indicator schema.",
+)
+def normalise_nomis_ashe(
+    df: pd.DataFrame,
+    dataset_code: str = "eejpay",
+) -> pd.DataFrame:
+    """Transform a Nomis ASHE API response into the Indicator schema.
+
+    ASHE returns annual data with DATE_NAME as a plain year string (e.g. "2023").
+
+    Args:
+        df: Raw DataFrame from ``extract_ashe``.
+        dataset_code: Dataset code (default "eejpay").
+
+    Returns:
+        DataFrame with columns matching the ``Indicator`` ORM model.
+    """
+    logger = _get_logger()
+
+    now = datetime.utcnow()
+    result = pd.DataFrame(
+        {
+            "indicator_id": "median_weekly_earnings",
+            "indicator_name": "Median gross weekly earnings",
+            "lad_code": df["GEOGRAPHY_CODE"].values,
+            "lad_name": df["GEOGRAPHY_NAME"].values,
+            "reference_period": df["DATE_NAME"].apply(_parse_nomis_date),
+            "value": pd.to_numeric(df["OBS_VALUE"], errors="coerce"),
+            "unit": "£",
+            "source": "nomis",
+            "dataset_code": dataset_code,
+            "created_at": now,
+            "updated_at": now,
+        }
+    )
+
+    result = result.dropna(subset=["value"])
+    logger.info("Normalised %d rows for ASHE median weekly earnings", len(result))
     return result

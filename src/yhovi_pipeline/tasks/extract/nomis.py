@@ -37,41 +37,44 @@ APS_VARIABLES: dict[str, int] = {
     "unemployment_rate": 84,
     "self_employment_rate": 74,
     "econ_inactive_rate": 111,
+    "qualifications_rqf4plus": 1902,
+    "no_qualifications": 1947,
 }
 
-# Columns to request from the API.
+# Columns to request from the APS API.
 _APS_SELECT = (
     "date_name,geography_name,geography_code,variable_name,variable_code,obs_value"
 )
+
+# Columns to request from the ASHE API.
+_ASHE_SELECT = "date_name,geography_name,geography_code,obs_value"
 
 
 def _build_nomis_url(
     dataset: str,
     *,
     geography: list[str],
-    variable: list[int],
-    measures: int = 20599,
     time: str = "latest",
     select: str | None = None,
     uid: str | None = None,
+    **extra_params,
 ) -> str:
     """Build a Nomis API CSV request URL.
 
     Args:
-        dataset: Nomis dataset ID, e.g. "NM_17_5".
+        dataset: Nomis dataset ID, e.g. "NM_17_5" or "NM_99_1".
         geography: List of ONS GSS codes.
-        variable: List of variable codes.
-        measures: Measures code (20599 = percentage value).
         time: Time parameter, e.g. "latest" or "2023-12".
         select: Comma-separated column names to return.
         uid: Optional Nomis API key (uid) for higher rate limits.
+        **extra_params: Dataset-specific parameters (e.g. variable, pay, sex, item,
+            measures). List values are joined with commas.
     """
-    params = {
-        "geography": ",".join(geography),
-        "variable": ",".join(str(v) for v in variable),
-        "measures": str(measures),
-        "time": time,
-    }
+    def _fmt(v: object) -> str:
+        return ",".join(str(x) for x in v) if isinstance(v, list) else str(v)
+
+    params = {"geography": ",".join(geography), "time": time}
+    params.update({k: _fmt(v) for k, v in extra_params.items()})
     if select:
         params["select"] = select
     if uid:
@@ -129,6 +132,7 @@ def extract_aps(
         "NM_17_5",
         geography=lad_codes,
         variable=[APS_VARIABLES[variable]],
+        measures=20599,
         time=time,
         select=_APS_SELECT,
         uid=uid,
@@ -142,19 +146,48 @@ def extract_aps(
 
 
 @task(
-    name="extract/nomis/bres",
-    description="Extract BRES employment data from NOMIS for Yorkshire LADs.",
+    name="extract/nomis/ashe",
+    description="Extract ASHE gross weekly earnings from NOMIS for Yorkshire LADs.",
     retries=3,
     retry_delay_seconds=60,
 )
-def extract_bres(reference_year: int) -> pd.DataFrame:
-    """Fetch Business Register and Employment Survey data from NOMIS.
+def extract_ashe(time: str = "latest") -> pd.DataFrame:
+    """Fetch Annual Survey of Hours and Earnings (ASHE) data from NOMIS.
+
+    Returns median gross weekly pay, workplace-based, for all workers
+    (total: all genders, full and part time combined).
 
     Args:
-        reference_year: The survey year to extract (e.g. 2023).
+        time: Time parameter — "latest" for most recent year, or a range
+            like "2010,2011,2012,...,2024" for historical data.
 
     Returns:
-        DataFrame with raw NOMIS BRES response for all Yorkshire LADs.
+        DataFrame with columns: date_name, geography_name, geography_code,
+        obs_value.
     """
-    # TODO: implement
-    raise NotImplementedError("extract_bres not yet implemented")
+    logger = _get_logger()
+    settings = get_settings()
+
+    lad_codes = settings.yorkshire_lad_codes
+    uid = (
+        settings.nomis_api_key.get_secret_value()
+        if settings.nomis_api_key
+        else None
+    )
+
+    url = _build_nomis_url(
+        "NM_99_1",
+        geography=lad_codes,
+        pay=1,           # Gross weekly pay
+        sex=7,           # Total (all genders + employment types)
+        item=2,          # Median
+        measures=20100,  # Value
+        time=time,
+        select=_ASHE_SELECT,
+        uid=uid,
+    )
+
+    logger.info("Fetching ASHE weekly earnings from Nomis")
+    df = _fetch_nomis_csv(url)
+    logger.info("Received %d rows from ASHE", len(df))
+    return df

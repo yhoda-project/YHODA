@@ -31,6 +31,10 @@ deployments:
     entrypoint: src/yhovi_pipeline/flows/economy/employment_jobs.py:employment_jobs_flow
     <<: *common
 
+  - name: economy/earnings
+    entrypoint: src/yhovi_pipeline/flows/economy/earnings.py:earnings_flow
+    <<: *common
+
   - name: economy/claimant-count
     entrypoint: src/yhovi_pipeline/flows/economy/claimant_count.py:claimant_count_flow
     <<: *common
