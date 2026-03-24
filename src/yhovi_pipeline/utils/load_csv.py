@@ -24,7 +24,6 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from yhovi_pipeline.config import YORKSHIRE_LAD_CODES, get_settings
 from yhovi_pipeline.db.models import Indicator
 
-
 # Map dataset codes to their indicator metadata.
 # indicator_id is a short machine-readable key; indicator_name is human-readable.
 DATASET_REGISTRY: dict[str, dict] = {
