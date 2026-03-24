@@ -21,7 +21,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from datetime import datetime
 
-from yhovi_pipeline.config import get_settings
+from yhovi_pipeline.config import YORKSHIRE_LAD_CODES, get_settings
 from yhovi_pipeline.db.models import Indicator
 
 
@@ -113,6 +113,7 @@ def wide_to_long(df: pd.DataFrame, dataset_code: str) -> pd.DataFrame:
     )
 
     long["year"] = long["year"].astype(int)
+    long = long[long["LAD_Code"].isin(YORKSHIRE_LAD_CODES)]
     long = long.dropna(subset=["value"])
 
     now = datetime.utcnow()
