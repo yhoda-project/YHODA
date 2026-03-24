@@ -9,12 +9,23 @@ API docs: https://www.nomisweb.co.uk/api/v01/help
 
 from __future__ import annotations
 
+import logging
 from io import StringIO
 
 import pandas as pd
 import requests
 from prefect import task
 from prefect.logging import get_run_logger
+
+_logger = logging.getLogger(__name__)
+
+
+def _get_logger():
+    """Return the Prefect run logger if available, else a standard logger."""
+    try:
+        return get_run_logger()
+    except Exception:
+        return _logger
 
 from yhovi_pipeline.config import get_settings
 
@@ -98,7 +109,7 @@ def extract_aps(
         DataFrame with columns: date_name, geography_name, geography_code,
         variable_name, variable_code, obs_value.
     """
-    logger = get_run_logger()
+    logger = _get_logger()
     settings = get_settings()
 
     if variable not in APS_VARIABLES:
