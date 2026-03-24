@@ -119,6 +119,69 @@ DATASET_REGISTRY: dict[str, dict] = {
         "source": "dfe",
         "subdomain": "Education and Skills",
     },
+    "sesfsm": {
+        "indicator_id": "free_school_meals_pct",
+        "indicator_name": "Percentage of pupils eligible for free school meals",
+        "unit": "%",
+        "source": "dfe",
+        "subdomain": "Education and Skills",
+    },
+    "sespg94": {
+        "indicator_id": "gcse_english_maths_94_pct",
+        "indicator_name": "Percentage of pupils achieving grades 9 to 4 in GCSE English and Maths",
+        "unit": "%",
+        "source": "dfe",
+        "subdomain": "Education and Skills",
+    },
+    "swa150plus": {
+        "indicator_id": "physically_active_150plus_pct",
+        "indicator_name": "Percentage of adults active for 150+ minutes per week",
+        "unit": "%",
+        "source": "sport_england",
+        "subdomain": "Wellbeing",
+    },
+    "swa30minus": {
+        "indicator_id": "physically_inactive_pct",
+        "indicator_name": "Percentage of adults inactive in sports (under 30 minutes per week)",
+        "unit": "%",
+        "source": "sport_england",
+        "subdomain": "Wellbeing",
+    },
+    "swa30": {
+        "indicator_id": "fairly_active_pct",
+        "indicator_name": "Percentage of fairly active adults (30-149 minutes per week)",
+        "unit": "%",
+        "source": "sport_england",
+        "subdomain": "Wellbeing",
+    },
+    "swls": {
+        "indicator_id": "mean_life_satisfaction",
+        "indicator_name": "Mean life satisfaction score (0-10)",
+        "unit": "score",
+        "source": "ons",
+        "subdomain": "Wellbeing",
+    },
+    "swwl": {
+        "indicator_id": "mean_worthwhile_score",
+        "indicator_name": "Mean worthwhile score (0-10)",
+        "unit": "score",
+        "source": "ons",
+        "subdomain": "Wellbeing",
+    },
+    "scsv": {
+        "indicator_id": "volunteering_pct",
+        "indicator_name": "Percentage of adults who volunteered in the past 12 months",
+        "unit": "%",
+        "source": "community_life_survey",
+        "subdomain": "Civic Participation",
+    },
+    "eeigwe": {
+        "indicator_id": "avg_weekly_earnings",
+        "indicator_name": "Average weekly earnings (£)",
+        "unit": "£",
+        "source": "ashe",
+        "subdomain": "Earnings and Income",
+    },
 }
 
 
@@ -235,6 +298,15 @@ CSV_FILES: list[tuple[str, str]] = [
     ("sdau18", "sdau18/sdau18_preprocessed_v1_4.csv"),
     ("sdpop", "sdpop/sdpop_preprocessed_v1_4.csv"),
     ("ses19l3", "ses19l3/ses19l3_preprocessed_v1_9.csv"),
+    ("sesfsm", "sesfsm/sesfsm_preprocessing_v1_2.csv"),
+    ("sespg94", "sespg94/sespg94_preprocessing_v1_2.csv"),
+    ("swa150plus", "swa150plus/swa150plus_preprocessing_v1_2.csv"),
+    ("swa30minus", "swa30minus/swa30minus_preprocessing_v1_3.csv"),
+    ("swa30", "swa30/swa30_preprocessing_v1_3.csv"),
+    ("swls", "swls/swls_preprocessing_v1_1.csv"),
+    ("swwl", "swwl/swwl_preprocessing_v1_1.csv"),
+    ("scsv", "scsv/scsv_preprocessing_v1_4.csv"),
+    ("eeigwe", "eeigwe/eeigwe_preprocessing_v2.csv"),
 ]
 
 BASE_PATH = "/mnt/yhoda_drive/Shared/1_Yorkshire_Vitality_Observatory/data_preprocessing"
