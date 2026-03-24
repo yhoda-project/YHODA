@@ -6,10 +6,23 @@ an idempotent upsert strategy (INSERT … ON CONFLICT UPDATE).
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import pandas as pd
 from prefect import task
+from prefect.logging import get_run_logger
+from sqlalchemy import create_engine
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.orm import Session
 
-from yhovi_pipeline.db.models import ExtractionStatus
+from yhovi_pipeline.config import get_settings
+from yhovi_pipeline.db.models import DatasetMetadata, ExtractionStatus, Indicator
+
+
+def _get_engine():
+    """Create a SQLAlchemy engine from settings."""
+    settings = get_settings()
+    return create_engine(settings.database_url.get_secret_value())
 
 
 @task(
@@ -23,16 +36,46 @@ def upsert_indicators(df: pd.DataFrame, dataset_code: str) -> int:
     as the merge key.  Existing rows are updated; new rows are inserted.
 
     Args:
-        df: Normalised DataFrame matching the ``Indicator`` schema.
+        df: Normalised DataFrame with columns matching the ``Indicator``
+            schema: indicator_id, indicator_name, lad_code, lad_name,
+            reference_period, value, unit, source, dataset_code.
         dataset_code: Dataset identifier for logging.
 
     Returns:
         Number of rows upserted.
     """
-    # TODO: implement
-    # settings = get_settings()
-    # engine = create_engine(settings.database_url.get_secret_value())
-    raise NotImplementedError("upsert_indicators not yet implemented")
+    logger = get_run_logger()
+    engine = _get_engine()
+
+    records = df.to_dict(orient="records")
+    if not records:
+        logger.warning("No records to upsert for %s", dataset_code)
+        return 0
+
+    now = datetime.utcnow()
+    for rec in records:
+        rec.setdefault("created_at", now)
+        rec["updated_at"] = now
+
+    stmt = pg_insert(Indicator).values(records)
+    stmt = stmt.on_conflict_do_update(
+        index_elements=["indicator_id", "lad_code", "reference_period"],
+        set_={
+            "indicator_name": stmt.excluded.indicator_name,
+            "lad_name": stmt.excluded.lad_name,
+            "value": stmt.excluded.value,
+            "unit": stmt.excluded.unit,
+            "source": stmt.excluded.source,
+            "dataset_code": stmt.excluded.dataset_code,
+            "updated_at": stmt.excluded.updated_at,
+        },
+    )
+
+    with engine.begin() as conn:
+        conn.execute(stmt)
+
+    logger.info("Upserted %d rows for dataset %s", len(records), dataset_code)
+    return len(records)
 
 
 @task(
@@ -61,5 +104,26 @@ def write_metadata(
         error_message: Truncated exception message on failure.
         source_url: API endpoint or file URL that was fetched.
     """
-    # TODO: implement
-    raise NotImplementedError("write_metadata not yet implemented")
+    logger = get_run_logger()
+    engine = _get_engine()
+
+    now = datetime.utcnow()
+    record = DatasetMetadata(
+        dataset_code=dataset_code,
+        source=source,
+        extraction_status=status,
+        prefect_flow_run_id=prefect_flow_run_id,
+        rows_extracted=rows_extracted,
+        rows_loaded=rows_loaded,
+        error_message=error_message,
+        source_url=source_url,
+        extracted_at=now if status == ExtractionStatus.SUCCESS else None,
+        loaded_at=now if rows_loaded else None,
+        created_at=now,
+    )
+
+    with Session(engine) as session:
+        session.add(record)
+        session.commit()
+
+    logger.info("Wrote metadata for %s: %s", dataset_code, status.value)
