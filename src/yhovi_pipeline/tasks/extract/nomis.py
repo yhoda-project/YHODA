@@ -17,6 +17,8 @@ import requests
 from prefect import task
 from prefect.logging import get_run_logger
 
+from yhovi_pipeline.config import get_settings
+
 _logger = logging.getLogger(__name__)
 
 
@@ -26,8 +28,6 @@ def _get_logger():
         return get_run_logger()
     except Exception:
         return _logger
-
-from yhovi_pipeline.config import get_settings
 
 BASE_URL = "https://www.nomisweb.co.uk/api/v01/dataset"
 

@@ -9,11 +9,11 @@ from __future__ import annotations
 from prefect import flow
 from prefect.task_runners import ThreadPoolTaskRunner
 
-from yhovi_pipeline.tasks.extract.nomis import APS_VARIABLES, extract_aps
+from yhovi_pipeline.db.models import ExtractionStatus
+from yhovi_pipeline.tasks.extract.nomis import extract_aps
 from yhovi_pipeline.tasks.load.database import upsert_indicators, write_metadata
 from yhovi_pipeline.tasks.transform.normalise import normalise_nomis_aps
 from yhovi_pipeline.tasks.transform.validate import validate_schema
-from yhovi_pipeline.db.models import ExtractionStatus
 
 # Map APS variable keys to dataset metadata for the indicator table.
 APS_DATASETS: dict[str, dict] = {
