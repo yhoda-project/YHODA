@@ -294,6 +294,55 @@ DATASET_REGISTRY: dict[str, dict] = {
         "source": "phe",
         "subdomain": "Health",
     },
+    "sheleb_m": {
+        "indicator_id": "male_life_expectancy",
+        "indicator_name": "Male life expectancy at birth (years)",
+        "unit": "years",
+        "source": "phe",
+        "subdomain": "Health",
+    },
+    "sheleb_f": {
+        "indicator_id": "female_life_expectancy",
+        "indicator_name": "Female life expectancy at birth (years)",
+        "unit": "years",
+        "source": "phe",
+        "subdomain": "Health",
+    },
+    "shehle_m": {
+        "indicator_id": "male_healthy_life_expectancy",
+        "indicator_name": "Male healthy life expectancy at birth (years)",
+        "unit": "years",
+        "source": "phe",
+        "subdomain": "Health",
+    },
+    "shehle_f": {
+        "indicator_id": "female_healthy_life_expectancy",
+        "indicator_name": "Female healthy life expectancy at birth (years)",
+        "unit": "years",
+        "source": "phe",
+        "subdomain": "Health",
+    },
+    "enz_co2": {
+        "indicator_id": "co2_emissions_per_capita",
+        "indicator_name": "Tonnes of CO2 emissions per capita per year",
+        "unit": "tonnes",
+        "source": "beis",
+        "subdomain": "Net Zero",
+    },
+    "enz_ch4": {
+        "indicator_id": "methane_emissions_per_capita",
+        "indicator_name": "Tonnes of methane emissions (CO2e) per capita per year",
+        "unit": "tonnes CO2e",
+        "source": "beis",
+        "subdomain": "Net Zero",
+    },
+    "enz_n2o": {
+        "indicator_id": "nitrous_oxide_emissions_per_capita",
+        "indicator_name": "Tonnes of nitrous oxide emissions (CO2e) per capita per year",
+        "unit": "tonnes CO2e",
+        "source": "beis",
+        "subdomain": "Net Zero",
+    },
 }
 
 
@@ -450,6 +499,13 @@ CSV_FILES: list[tuple[str, str]] = [
     ("shohwl", "shohwl/shohwl_preprocessing_v1_2.csv"),
     ("eejpip", "eejpip/eejpip_preprocessing_v1_5.csv"),
     ("sheu75", "sheu75/sheu75_preprocessed_v1_2.csv"),
+    ("sheleb_m", "sheleb/sheleb_m/sheleb_m_preprocessing_v1_1.csv"),
+    ("sheleb_f", "sheleb/sheleb_f/sheleb_f_preprocessing_v1_1.csv"),
+    ("shehle_m", "shehle/shehle_m/shehle_m_preprocessing_v1_1.csv"),
+    ("shehle_f", "shehle/shehle_f/shehle_f_preprocessing_v1_1.csv"),
+    ("enz_co2", "enz/carbondioxide/enz_carbondioxide_preprocessed_v1_7.csv"),
+    ("enz_ch4", "enz/methane/enz_methane_preprocessed_v1_7.csv"),
+    ("enz_n2o", "enz/nitrousoxide/enz_nitrousoxide_preprocessed_v1_7.csv"),
 ]
 
 BASE_PATH = "/mnt/yhoda_drive/Shared/1_Yorkshire_Vitality_Observatory/data_preprocessing"
