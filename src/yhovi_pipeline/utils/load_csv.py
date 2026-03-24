@@ -77,6 +77,48 @@ DATASET_REGISTRY: dict[str, dict] = {
         "source": "nomis",
         "subdomain": "Education and Skills",
     },
+    "ebebs": {
+        "indicator_id": "businesses_per_10k",
+        "indicator_name": "Number of Business Counts per 10,000 inhabitants",
+        "unit": "per 10k",
+        "source": "ons",
+        "subdomain": "Business and Economy",
+    },
+    "ebegva": {
+        "indicator_id": "gva_millions",
+        "indicator_name": "Gross Value Added (£ millions)",
+        "unit": "£m",
+        "source": "ons",
+        "subdomain": "Business and Economy",
+    },
+    "sda65": {
+        "indicator_id": "pct_aged_65_plus",
+        "indicator_name": "Percentage of Individuals aged 65+",
+        "unit": "%",
+        "source": "ons",
+        "subdomain": "Demographics",
+    },
+    "sdau18": {
+        "indicator_id": "pct_aged_under_18",
+        "indicator_name": "Percentage of Individuals under 18 years old",
+        "unit": "%",
+        "source": "ons",
+        "subdomain": "Demographics",
+    },
+    "sdpop": {
+        "indicator_id": "total_population",
+        "indicator_name": "Total population",
+        "unit": "persons",
+        "source": "ons",
+        "subdomain": "Demographics",
+    },
+    "ses19l3": {
+        "indicator_id": "level3_qualifications_pct",
+        "indicator_name": "Percentage of 19 year olds achieving Level 3 qualifications",
+        "unit": "%",
+        "source": "dfe",
+        "subdomain": "Education and Skills",
+    },
 }
 
 
@@ -187,6 +229,12 @@ CSV_FILES: list[tuple[str, str]] = [
     ("eejjd", "eejjd/eejjd_preprocessed_v3.csv"),
     ("sesq", "sesq/sesq_preprocessed_v1_1.csv"),
     ("sesnfq", "sesnfq/sesnfq_preprocessed_v1_1.csv"),
+    ("ebebs", "ebebs/ebebs_v1_preprocessed.csv"),
+    ("ebegva", "ebegva/ebegva_v1_preprocessed.csv"),
+    ("sda65", "sda65/sda65_preprocessed_v1_5.csv"),
+    ("sdau18", "sdau18/sdau18_preprocessed_v1_4.csv"),
+    ("sdpop", "sdpop/sdpop_preprocessed_v1_4.csv"),
+    ("ses19l3", "ses19l3/ses19l3_preprocessed_v1_9.csv"),
 ]
 
 BASE_PATH = "/mnt/yhoda_drive/Shared/1_Yorkshire_Vitality_Observatory/data_preprocessing"
