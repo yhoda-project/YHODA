@@ -266,6 +266,20 @@ DATASET_REGISTRY: dict[str, dict] = {
         "source": "dluhc",
         "subdomain": "Housing",
     },
+    "ebebcr": {
+        "indicator_id": "business_churn_rate_per_10k",
+        "indicator_name": "Registered business churn rate per 10,000 population",
+        "unit": "per 10k",
+        "source": "ons",
+        "subdomain": "Business and Economy",
+    },
+    "ebegvala": {
+        "indicator_id": "gva_per_la",
+        "indicator_name": "Gross Value Added by local authority (£ millions)",
+        "unit": "£m",
+        "source": "ons",
+        "subdomain": "Business and Economy",
+    },
     "eejpip": {
         "indicator_id": "disability_benefits_per_100k",
         "indicator_name": "Number of people with disability benefits (PIP) per 100,000 residents",
@@ -441,6 +455,86 @@ CSV_FILES: list[tuple[str, str]] = [
 BASE_PATH = "/mnt/yhoda_drive/Shared/1_Yorkshire_Vitality_Observatory/data_preprocessing"
 
 
+# Long-format files: (dataset_code, relative path, lad_code_col, lad_name_col, year_col, value_col)
+LONG_CSV_FILES: list[tuple[str, str, str, str, str, str]] = [
+    ("ebebcr", "ebebcr/ebebcr_preprocessed_v2.csv", "LAD23CD", "LocalAuthority", "Year", "ChurnRate_per_10000"),
+    ("ebegvala", "ebegvala/ebegvala_v1_3.csv", "LAD24CD", "LAD24NM", "Year", "Value"),
+]
+
+
+def load_long_dataset(
+    path: str,
+    dataset_code: str,
+    lad_code_col: str,
+    lad_name_col: str,
+    year_col: str,
+    value_col: str,
+) -> int:
+    """Load a long-format CSV (one row per LAD per year) into the indicator table.
+
+    Args:
+        path: Path to the CSV file.
+        dataset_code: Key into DATASET_REGISTRY.
+        lad_code_col: Column name for LAD GSS code.
+        lad_name_col: Column name for LAD name.
+        year_col: Column name for the year.
+        value_col: Column name for the indicator value.
+
+    Returns:
+        Number of rows upserted.
+    """
+    meta = DATASET_REGISTRY[dataset_code]
+    settings = get_settings()
+    engine = create_engine(settings.database_url.get_secret_value())
+
+    df = pd.read_csv(path)
+    df = df[df[lad_code_col].isin(YORKSHIRE_LAD_CODES)]
+    df = df.dropna(subset=[value_col])
+
+    now = datetime.utcnow()
+    result = pd.DataFrame(
+        {
+            "indicator_id": meta["indicator_id"],
+            "indicator_name": meta["indicator_name"],
+            "lad_code": df[lad_code_col].values,
+            "lad_name": df[lad_name_col].values,
+            "reference_period": df[year_col].apply(lambda y: date(int(y), 1, 1)),
+            "value": pd.to_numeric(df[value_col], errors="coerce"),
+            "unit": meta["unit"],
+            "source": meta["source"],
+            "dataset_code": dataset_code,
+            "created_at": now,
+            "updated_at": now,
+        }
+    )
+    result = result.dropna(subset=["value"])
+
+    records = result.to_dict(orient="records")
+    if not records:
+        print(f"  No records for {dataset_code}")
+        return 0
+
+    stmt = pg_insert(Indicator).values(records)
+    stmt = stmt.on_conflict_do_update(
+        index_elements=["indicator_id", "lad_code", "reference_period"],
+        set_={
+            "indicator_name": stmt.excluded.indicator_name,
+            "lad_name": stmt.excluded.lad_name,
+            "value": stmt.excluded.value,
+            "unit": stmt.excluded.unit,
+            "source": stmt.excluded.source,
+            "dataset_code": stmt.excluded.dataset_code,
+            "updated_at": stmt.excluded.updated_at,
+        },
+    )
+
+    with engine.begin() as conn:
+        conn.execute(stmt)
+
+    print(f"  Upserted {len(records)} rows for {dataset_code}")
+    return len(records)
+
+
 def load_all() -> None:
     """Load all available preprocessed CSVs into the database."""
     total = 0
@@ -449,6 +543,15 @@ def load_all() -> None:
         print(f"Loading {dataset_code} from {path}...")
         try:
             count = load_dataset(path, dataset_code)
+            total += count
+        except Exception as e:
+            print(f"  ERROR loading {dataset_code}: {e}")
+
+    for dataset_code, rel_path, lad_code_col, lad_name_col, year_col, value_col in LONG_CSV_FILES:
+        path = f"{BASE_PATH}/{rel_path}"
+        print(f"Loading {dataset_code} from {path}...")
+        try:
+            count = load_long_dataset(path, dataset_code, lad_code_col, lad_name_col, year_col, value_col)
             total += count
         except Exception as e:
             print(f"  ERROR loading {dataset_code}: {e}")
