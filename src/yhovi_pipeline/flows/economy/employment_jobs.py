@@ -36,7 +36,7 @@ APS_DATASETS: dict[str, dict] = {
         "unit": "%",
     },
     "econ_inactive_rate": {
-        "indicator_id": "econ_inactive_rate",
+        "indicator_id": "econ_inactive_want_job",
         "indicator_name": "Percentage of economically inactive who want a job",
         "dataset_code": "eejeir",
         "unit": "%",
