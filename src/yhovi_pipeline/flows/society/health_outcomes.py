@@ -14,7 +14,7 @@ Datasets loaded:
 | sheleb_m | Life expectancy   | Male | 90366 (PHOF A01a)                           |
 |          | at birth          |      |                                             |
 +----------+-------------------+------+---------------------------------------------+
-| sheleb_f | Life expectancy   | Fem  | 90366 (PHOF A01a) – Female dimension        |
+| sheleb_f | Life expectancy   | Fem  | 90366 (PHOF A01a) - Female dimension        |
 |          | at birth          |      |                                             |
 +----------+-------------------+------+---------------------------------------------+
 | shehle_m | Healthy life exp. | Male | 90048 (PHOF A02a)                           |
