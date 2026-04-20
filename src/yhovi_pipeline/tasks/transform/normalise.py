@@ -257,12 +257,14 @@ def normalise_fingertips(
     indicator_id: str,
     indicator_name: str,
     sex_filter: str,
+    age_filter: str,
     unit: str | None = None,
 ) -> pd.DataFrame:
     """Transform a Fingertips API response into the canonical Indicator schema.
 
     Filters the raw England-wide DataFrame down to Yorkshire LADs and the
-    requested sex dimension, then maps columns to the ``Indicator`` ORM shape.
+    requested sex and age dimensions, then maps columns to the ``Indicator``
+    ORM shape.
 
     Args:
         df: Raw DataFrame from ``extract_fingertips_indicators``.
@@ -272,6 +274,9 @@ def normalise_fingertips(
         indicator_name: Human-readable indicator name.
         sex_filter: Value of the ``Sex`` column to keep
             (``"Male"``, ``"Female"``, or ``"Persons"``).
+        age_filter: Value of the ``Age`` column to keep (e.g. ``"All ages"``
+            or ``"10+ yrs"``). Varies by indicator — verify from the API
+            before setting.
         unit: Optional unit of measurement (e.g. ``"Years"``).
 
     Returns:
@@ -279,11 +284,10 @@ def normalise_fingertips(
     """
     logger = _get_logger()
 
-    # Filter to the requested sex and age dimensions, then Yorkshire LADs.
-    # "All ages" is the standard aggregate for these indicators — filtering
-    # explicitly avoids picking up deprivation or sub-group breakdowns that
-    # Fingertips includes in the same response.
-    df = df[(df["Sex"] == sex_filter) & (df["Age"] == "All ages")].copy()
+    # Filter to the requested sex and age dimensions.
+    # Explicit age filtering avoids picking up deprivation or sub-group
+    # breakdowns that Fingertips includes in the same response.
+    df = df[(df["Sex"] == sex_filter) & (df["Age"] == age_filter)].copy()
 
     # Filter to Yorkshire LADs
     df = df[df["Area Code"].isin(YORKSHIRE_LAD_CODES)].copy()

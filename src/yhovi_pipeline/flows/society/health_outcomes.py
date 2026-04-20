@@ -50,6 +50,7 @@ HEALTH_DATASETS: dict[str, dict] = {
         "indicator_id": "preventable_mortality_u75",
         "indicator_name": "Under-75 mortality rate from causes considered preventable",
         "sex_filter": "Persons",
+        "age_filter": "10+ yrs",
         "unit": "Rate per 100,000",
     },
     "sheleb_m": {
@@ -57,6 +58,7 @@ HEALTH_DATASETS: dict[str, dict] = {
         "indicator_id": "life_expectancy_male",
         "indicator_name": "Life expectancy at birth (male)",
         "sex_filter": "Male",
+        "age_filter": "All ages",
         "unit": "Years",
     },
     "sheleb_f": {
@@ -64,6 +66,7 @@ HEALTH_DATASETS: dict[str, dict] = {
         "indicator_id": "life_expectancy_female",
         "indicator_name": "Life expectancy at birth (female)",
         "sex_filter": "Female",
+        "age_filter": "All ages",
         "unit": "Years",
     },
     "shehle_m": {
@@ -71,6 +74,7 @@ HEALTH_DATASETS: dict[str, dict] = {
         "indicator_id": "healthy_life_expectancy_male",
         "indicator_name": "Healthy life expectancy at birth (male)",
         "sex_filter": "Male",
+        "age_filter": "All ages",
         "unit": "Years",
     },
     "shehle_f": {
@@ -78,6 +82,7 @@ HEALTH_DATASETS: dict[str, dict] = {
         "indicator_id": "healthy_life_expectancy_female",
         "indicator_name": "Healthy life expectancy at birth (female)",
         "sex_filter": "Female",
+        "age_filter": "All ages",
         "unit": "Years",
     },
 }
@@ -119,6 +124,7 @@ def health_outcomes_flow() -> None:
                 indicator_id=meta["indicator_id"],
                 indicator_name=meta["indicator_name"],
                 sex_filter=meta["sex_filter"],
+                age_filter=meta["age_filter"],
                 unit=meta["unit"],
             )
 
