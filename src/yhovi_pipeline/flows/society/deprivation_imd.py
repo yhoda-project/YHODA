@@ -7,6 +7,7 @@ for all Yorkshire LADs.
 from __future__ import annotations
 
 from prefect import flow
+from prefect.logging import get_run_logger
 from prefect.task_runners import ThreadPoolTaskRunner
 
 
@@ -28,5 +29,9 @@ def deprivation_imd_flow() -> None:
         5. Upsert into the data warehouse.
         6. Write audit metadata.
     """
-    # TODO: implement — call extract, transform, and load tasks
-    raise NotImplementedError("deprivation_imd_flow not yet implemented")
+    logger = get_run_logger()
+    logger.info(
+        "No automated extract available: MHCLG Indices of Multiple Deprivation "
+        "is published every ~4 years as a static release. Reload data manually "
+        "via load_csv.py when a new edition is published."
+    )

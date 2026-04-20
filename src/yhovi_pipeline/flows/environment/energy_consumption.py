@@ -7,6 +7,7 @@ for all Yorkshire LADs.
 from __future__ import annotations
 
 from prefect import flow
+from prefect.logging import get_run_logger
 from prefect.task_runners import ThreadPoolTaskRunner
 
 
@@ -27,5 +28,9 @@ def energy_consumption_flow() -> None:
         4. Upsert into the data warehouse.
         5. Write audit metadata.
     """
-    # TODO: implement — call extract, transform, and load tasks
-    raise NotImplementedError("energy_consumption_flow not yet implemented")
+    logger = get_run_logger()
+    logger.info(
+        "No automated extract available: BEIS sub-national energy consumption "
+        "data is a static annual release. Reload data manually via load_csv.py "
+        "when a new edition is published."
+    )

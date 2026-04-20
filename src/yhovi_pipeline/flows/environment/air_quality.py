@@ -8,6 +8,7 @@ aggregated to LAD level.
 from __future__ import annotations
 
 from prefect import flow
+from prefect.logging import get_run_logger
 from prefect.task_runners import ThreadPoolTaskRunner
 
 
@@ -30,5 +31,9 @@ def air_quality_flow() -> None:
         6. Upsert into the data warehouse.
         7. Write audit metadata.
     """
-    # TODO: implement — call extract, transform, and load tasks
-    raise NotImplementedError("air_quality_flow not yet implemented")
+    logger = get_run_logger()
+    logger.info(
+        "No automated extract available: DEFRA AURN air quality data is a "
+        "static annual release. Reload data manually via load_csv.py when a "
+        "new edition is published."
+    )

@@ -7,6 +7,7 @@ for all Yorkshire LADs.
 from __future__ import annotations
 
 from prefect import flow
+from prefect.logging import get_run_logger
 from prefect.task_runners import ThreadPoolTaskRunner
 
 
@@ -27,5 +28,9 @@ def claimant_count_flow() -> None:
         4. Upsert into the data warehouse.
         5. Write audit metadata.
     """
-    # TODO: implement — call extract, transform, and load tasks
-    raise NotImplementedError("claimant_count_flow not yet implemented")
+    logger = get_run_logger()
+    logger.info(
+        "DWP Stat-Xplore extract not yet implemented: pending DWP API key "
+        "registration at https://stat-xplore.dwp.gov.uk/. Once the key is "
+        "available, set DWP_API_KEY and implement tasks/extract/dwp.py."
+    )

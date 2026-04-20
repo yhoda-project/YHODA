@@ -7,6 +7,7 @@ from ONS Census / MHCLG data for all Yorkshire LADs.
 from __future__ import annotations
 
 from prefect import flow
+from prefect.logging import get_run_logger
 from prefect.task_runners import ThreadPoolTaskRunner
 
 
@@ -26,5 +27,9 @@ def housing_tenure_flow() -> None:
         3. Upsert into the data warehouse.
         4. Write audit metadata.
     """
-    # TODO: implement — call extract, transform, and load tasks
-    raise NotImplementedError("housing_tenure_flow not yet implemented")
+    logger = get_run_logger()
+    logger.info(
+        "No automated extract available: housing tenure data (ONS Census / "
+        "MHCLG) is a static release. Reload data manually via load_csv.py "
+        "when a new edition is published."
+    )

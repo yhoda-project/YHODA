@@ -6,6 +6,7 @@ Extracts recorded crime data from the Home Office / ONS for all Yorkshire LADs.
 from __future__ import annotations
 
 from prefect import flow
+from prefect.logging import get_run_logger
 from prefect.task_runners import ThreadPoolTaskRunner
 
 
@@ -26,5 +27,9 @@ def crime_statistics_flow() -> None:
         4. Upsert into the data warehouse.
         5. Write audit metadata.
     """
-    # TODO: implement — call extract, transform, and load tasks
-    raise NotImplementedError("crime_statistics_flow not yet implemented")
+    logger = get_run_logger()
+    logger.info(
+        "No automated extract available: Home Office / ONS crime statistics "
+        "are static annual releases. Reload data manually via load_csv.py "
+        "when a new edition is published."
+    )
