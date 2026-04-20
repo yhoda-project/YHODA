@@ -284,10 +284,15 @@ def normalise_fingertips(
     """
     logger = _get_logger()
 
-    # Filter to the requested sex and age dimensions.
-    # Explicit age filtering avoids picking up deprivation or sub-group
-    # breakdowns that Fingertips includes in the same response.
-    df = df[(df["Sex"] == sex_filter) & (df["Age"] == age_filter)].copy()
+    # Filter to the requested sex and age dimensions, and to aggregate rows only.
+    # Fingertips includes deprivation breakdowns (populated Category Type) in
+    # the same response as the main LAD-level aggregates (null Category Type).
+    # We only want the aggregates.
+    df = df[
+        (df["Sex"] == sex_filter)
+        & (df["Age"] == age_filter)
+        & (df["Category Type"].isna())
+    ].copy()
 
     # Filter to Yorkshire LADs
     df = df[df["Area Code"].isin(YORKSHIRE_LAD_CODES)].copy()
@@ -321,20 +326,6 @@ def normalise_fingertips(
     )
 
     result = result.dropna(subset=["value"])
-
-    # Fingertips returns multiple age groups per LAD/period/sex for some indicators.
-    # Deduplicate on the upsert key, keeping the last occurrence.
-    before = len(result)
-    result = result.drop_duplicates(
-        subset=["indicator_id", "lad_code", "reference_period"], keep="last"
-    )
-    if len(result) < before:
-        logger.warning(
-            "Dropped %d duplicate rows for %s (%s) — multiple age groups in source",
-            before - len(result),
-            indicator_id,
-            sex_filter,
-        )
 
     logger.info(
         "Normalised %d rows for %s (%s) from Fingertips",
