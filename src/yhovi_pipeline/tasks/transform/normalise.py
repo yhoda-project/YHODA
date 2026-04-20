@@ -279,8 +279,11 @@ def normalise_fingertips(
     """
     logger = _get_logger()
 
-    # Filter to the requested sex dimension
-    df = df[df["Sex"] == sex_filter].copy()
+    # Filter to the requested sex and age dimensions, then Yorkshire LADs.
+    # "All ages" is the standard aggregate for these indicators — filtering
+    # explicitly avoids picking up deprivation or sub-group breakdowns that
+    # Fingertips includes in the same response.
+    df = df[(df["Sex"] == sex_filter) & (df["Age"] == "All ages")].copy()
 
     # Filter to Yorkshire LADs
     df = df[df["Area Code"].isin(YORKSHIRE_LAD_CODES)].copy()
