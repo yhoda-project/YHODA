@@ -10,9 +10,9 @@ from prefect import flow
 from prefect.task_runners import ThreadPoolTaskRunner
 
 from yhovi_pipeline.db.models import ExtractionStatus
-from yhovi_pipeline.tasks.extract.nomis import extract_aps
+from yhovi_pipeline.tasks.extract.nomis import extract_aps, extract_jobs_density
 from yhovi_pipeline.tasks.load.database import upsert_indicators, write_metadata
-from yhovi_pipeline.tasks.transform.normalise import normalise_nomis_aps
+from yhovi_pipeline.tasks.transform.normalise import normalise_nomis_annual, normalise_nomis_aps
 from yhovi_pipeline.tasks.transform.validate import validate_schema
 
 # Map APS variable keys to dataset metadata for the indicator table.
@@ -49,6 +49,13 @@ NOMIS_APS_COLUMNS = [
     "GEOGRAPHY_CODE",
     "VARIABLE_NAME",
     "VARIABLE_CODE",
+    "OBS_VALUE",
+]
+
+NOMIS_ANNUAL_COLUMNS = [
+    "DATE_NAME",
+    "GEOGRAPHY_NAME",
+    "GEOGRAPHY_CODE",
     "OBS_VALUE",
 ]
 
@@ -113,3 +120,41 @@ def employment_jobs_flow(time: str = "latest") -> None:
                 error_message=str(e)[:500],
             )
             raise
+
+    # Jobs Density (eejjd — ONS NM_57_1, pre-calculated ratio)
+    dataset_code = "eejjd"
+    try:
+        raw_df = extract_jobs_density(time=time)
+
+        validated_df = validate_schema(
+            df=raw_df,
+            required_columns=NOMIS_ANNUAL_COLUMNS,
+            source="nomis",
+        )
+
+        indicator_df = normalise_nomis_annual(
+            df=validated_df,
+            indicator_id="jobs_per_working_age_resident",
+            indicator_name="Number of Jobs per Working-Age Resident (16-64)",
+            dataset_code=dataset_code,
+            unit="ratio",
+        )
+
+        rows_loaded = upsert_indicators(df=indicator_df, dataset_code=dataset_code)
+
+        write_metadata(
+            dataset_code=dataset_code,
+            source="nomis",
+            status=ExtractionStatus.SUCCESS,
+            rows_extracted=len(raw_df),  # type: ignore[arg-type]
+            rows_loaded=rows_loaded,
+        )
+
+    except Exception as e:
+        write_metadata(
+            dataset_code=dataset_code,
+            source="nomis",
+            status=ExtractionStatus.FAILED,
+            error_message=str(e)[:500],
+        )
+        raise

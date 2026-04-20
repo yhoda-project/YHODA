@@ -203,6 +203,58 @@ def normalise_nomis_ashe(
     return result
 
 
+@task(
+    name="transform/normalise/nomis-annual",
+    description="Normalise any 4-column annual Nomis dataset to the canonical Indicator schema.",
+)
+def normalise_nomis_annual(
+    df: pd.DataFrame,
+    indicator_id: str,
+    indicator_name: str,
+    dataset_code: str,
+    unit: str | None = None,
+) -> pd.DataFrame:
+    """Transform a 4-column annual Nomis response into the Indicator schema.
+
+    Handles Nomis datasets whose API response contains only
+    DATE_NAME, GEOGRAPHY_NAME, GEOGRAPHY_CODE, OBS_VALUE — such as
+    ASHE (NM_99_1) and Jobs Density (NM_57_1) — where DATE_NAME is a
+    plain year string (e.g. "2023").
+
+    Args:
+        df: Raw DataFrame from a Nomis extract task.
+        indicator_id: Machine-readable indicator identifier.
+        indicator_name: Human-readable indicator name.
+        dataset_code: Dataset code, e.g. "eejjd".
+        unit: Optional unit of measurement.
+
+    Returns:
+        DataFrame with columns matching the ``Indicator`` ORM model.
+    """
+    logger = _get_logger()
+
+    now = datetime.now(UTC)
+    result = pd.DataFrame(
+        {
+            "indicator_id": indicator_id,
+            "indicator_name": indicator_name,
+            "lad_code": df["GEOGRAPHY_CODE"].values,
+            "lad_name": df["GEOGRAPHY_NAME"].values,
+            "reference_period": df["DATE_NAME"].astype(str).apply(_parse_nomis_date),
+            "value": pd.to_numeric(df["OBS_VALUE"], errors="coerce"),
+            "unit": unit,
+            "source": "nomis",
+            "dataset_code": dataset_code,
+            "created_at": now,
+            "updated_at": now,
+        }
+    )
+
+    result = result.dropna(subset=["value"])
+    logger.info("Normalised %d rows for %s", len(result), indicator_id)
+    return result
+
+
 # ---------------------------------------------------------------------------
 # Fingertips helpers
 # ---------------------------------------------------------------------------

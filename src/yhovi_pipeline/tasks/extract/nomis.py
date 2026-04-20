@@ -186,3 +186,45 @@ def extract_ashe(time: str = "latest") -> pd.DataFrame:
     df = _fetch_nomis_csv(url)
     logger.info("Received %d rows from ASHE", len(df))
     return df
+
+
+@task(
+    name="extract/nomis/jobs-density",
+    description="Extract ONS Jobs Density from NOMIS NM_57_1 for Yorkshire LADs.",
+    retries=3,
+    retry_delay_seconds=60,
+)
+def extract_jobs_density(time: str = "latest") -> pd.DataFrame:
+    """Fetch ONS Jobs Density data from NOMIS (NM_57_1).
+
+    Jobs density is defined as total filled jobs divided by the resident
+    working-age population (16-64) in that area.  Item 3 selects the
+    pre-calculated ratio; item 1 would return the raw jobs count.
+
+    Args:
+        time: Time parameter — "latest" for most recent year, or a range
+            like "2010,2011,...,2023" for historical data.
+
+    Returns:
+        DataFrame with columns: date_name, geography_name, geography_code,
+        obs_value.
+    """
+    logger = _get_logger()
+    settings = get_settings()
+
+    lad_codes = settings.yorkshire_lad_codes
+    uid = settings.nomis_api_key.get_secret_value() if settings.nomis_api_key else None
+
+    url = _build_nomis_url(
+        "NM_57_1",
+        geography=lad_codes,
+        item=3,  # Jobs density ratio; item=1 would be raw jobs count
+        time=time,
+        select=_ASHE_SELECT,
+        uid=uid,
+    )
+
+    logger.info("Fetching Jobs Density from Nomis")
+    df = _fetch_nomis_csv(url)
+    logger.info("Received %d rows from Jobs Density", len(df))
+    return df

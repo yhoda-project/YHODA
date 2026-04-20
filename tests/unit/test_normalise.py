@@ -18,6 +18,7 @@ from yhovi_pipeline.tasks.transform.normalise import (
     _parse_fingertips_period,
     _parse_nomis_date,
     normalise_fingertips,
+    normalise_nomis_annual,
     normalise_nomis_aps,
     normalise_nomis_ashe,
     normalise_to_indicator,
@@ -72,6 +73,18 @@ def _nomis_ashe_df(**overrides: object) -> pd.DataFrame:
         "GEOGRAPHY_NAME": ["Bradford"],
         "GEOGRAPHY_CODE": [_BRADFORD],
         "OBS_VALUE": [550.0],
+    }
+    data.update(overrides)  # type: ignore[arg-type]
+    return pd.DataFrame(data)
+
+
+def _nomis_annual_df(**overrides: object) -> pd.DataFrame:
+    """Minimal single-row Nomis annual (4-column) DataFrame."""
+    data: dict[str, list] = {
+        "DATE_NAME": ["2023"],
+        "GEOGRAPHY_NAME": ["Bradford"],
+        "GEOGRAPHY_CODE": [_BRADFORD],
+        "OBS_VALUE": [0.65],
     }
     data.update(overrides)  # type: ignore[arg-type]
     return pd.DataFrame(data)
@@ -288,6 +301,103 @@ class TestNormaliseNomisAshe:
         result = normalise_nomis_ashe.fn(df=df)
         assert len(result) == 1
         assert result["lad_code"].iloc[0] == _BRADFORD
+
+
+# ---------------------------------------------------------------------------
+# normalise_nomis_annual
+# ---------------------------------------------------------------------------
+
+
+class TestNormaliseNomisAnnual:
+    def test_output_has_all_required_indicator_columns(self) -> None:
+        result = normalise_nomis_annual.fn(
+            df=_nomis_annual_df(),
+            indicator_id="jobs_per_working_age_resident",
+            indicator_name="Number of Jobs per Working-Age Resident (16-64)",
+            dataset_code="eejjd",
+            unit="ratio",
+        )
+        assert _INDICATOR_COLS.issubset(result.columns)
+
+    def test_columns_mapped_to_canonical_schema(self) -> None:
+        result = normalise_nomis_annual.fn(
+            df=_nomis_annual_df(),
+            indicator_id="jobs_per_working_age_resident",
+            indicator_name="Number of Jobs per Working-Age Resident (16-64)",
+            dataset_code="eejjd",
+            unit="ratio",
+        )
+        row = result.iloc[0]
+        assert row["lad_code"] == _BRADFORD
+        assert row["lad_name"] == "Bradford"
+        assert row["indicator_id"] == "jobs_per_working_age_resident"
+        assert row["source"] == "nomis"
+        assert row["dataset_code"] == "eejjd"
+        assert row["unit"] == "ratio"
+        assert row["value"] == pytest.approx(0.65)
+
+    def test_plain_year_date_parsed_correctly(self) -> None:
+        result = normalise_nomis_annual.fn(
+            df=_nomis_annual_df(DATE_NAME=["2022"]),
+            indicator_id="x",
+            indicator_name="x",
+            dataset_code="x",
+        )
+        assert result["reference_period"].iloc[0] == date(2022, 1, 1)
+
+    def test_integer_date_name_coerced_to_string(self) -> None:
+        df = pd.DataFrame(
+            {
+                "DATE_NAME": [2023],
+                "GEOGRAPHY_NAME": ["Bradford"],
+                "GEOGRAPHY_CODE": [_BRADFORD],
+                "OBS_VALUE": [0.65],
+            }
+        )
+        result = normalise_nomis_annual.fn(
+            df=df,
+            indicator_id="x",
+            indicator_name="x",
+            dataset_code="x",
+        )
+        assert result["reference_period"].iloc[0] == date(2023, 1, 1)
+
+    def test_nan_obs_value_rows_dropped(self) -> None:
+        df = pd.DataFrame(
+            {
+                "DATE_NAME": ["2022", "2023"],
+                "GEOGRAPHY_NAME": ["Bradford", "Leeds"],
+                "GEOGRAPHY_CODE": [_BRADFORD, _LEEDS],
+                "OBS_VALUE": [0.65, None],
+            }
+        )
+        result = normalise_nomis_annual.fn(
+            df=df,
+            indicator_id="x",
+            indicator_name="x",
+            dataset_code="x",
+        )
+        assert len(result) == 1
+        assert result["lad_code"].iloc[0] == _BRADFORD
+
+    def test_unit_defaults_to_none(self) -> None:
+        result = normalise_nomis_annual.fn(
+            df=_nomis_annual_df(),
+            indicator_id="x",
+            indicator_name="x",
+            dataset_code="x",
+        )
+        assert result["unit"].iloc[0] is None
+
+    def test_custom_unit_propagated(self) -> None:
+        result = normalise_nomis_annual.fn(
+            df=_nomis_annual_df(),
+            indicator_id="x",
+            indicator_name="x",
+            dataset_code="x",
+            unit="ratio",
+        )
+        assert result["unit"].iloc[0] == "ratio"
 
 
 # ---------------------------------------------------------------------------
