@@ -2,9 +2,9 @@
 
 Covers all pure transform functions: date parsers, and the five normalise tasks
 (normalise_to_indicator, normalise_nomis_aps, normalise_nomis_ashe,
-normalise_fingertips).  Prefect tasks run synchronously outside a flow context
-and fall back to the standard Python logger via _get_logger(), so no server is
-required.
+normalise_fingertips).  Task functions are called via their ``.fn`` attribute to
+invoke the underlying Python function directly, bypassing Prefect's task
+machinery and avoiding the ephemeral server that Prefect otherwise spins up.
 """
 
 from __future__ import annotations
@@ -163,7 +163,7 @@ class TestParseFingertipsPeriod:
 
 class TestNormaliseNomisAps:
     def test_output_has_all_required_indicator_columns(self) -> None:
-        result = normalise_nomis_aps(
+        result = normalise_nomis_aps.fn(
             df=_nomis_aps_df(),
             indicator_id="qualifications_rqf4plus",
             indicator_name="% aged 16-64 qualified to RQF level 4 and above",
@@ -172,7 +172,7 @@ class TestNormaliseNomisAps:
         assert _INDICATOR_COLS.issubset(result.columns)
 
     def test_nomis_columns_mapped_to_canonical_schema(self) -> None:
-        result = normalise_nomis_aps(
+        result = normalise_nomis_aps.fn(
             df=_nomis_aps_df(),
             indicator_id="qualifications_rqf4plus",
             indicator_name="% qualified to RQF4+",
@@ -188,7 +188,7 @@ class TestNormaliseNomisAps:
         assert row["value"] == pytest.approx(42.5)
 
     def test_rolling_date_parsed_to_end_month(self) -> None:
-        result = normalise_nomis_aps(
+        result = normalise_nomis_aps.fn(
             df=_nomis_aps_df(DATE_NAME=["Oct 2022-Sep 2023"]),
             indicator_id="x",
             indicator_name="x",
@@ -207,7 +207,7 @@ class TestNormaliseNomisAps:
                 "OBS_VALUE": [42.5, None],
             }
         )
-        result = normalise_nomis_aps(df=df, indicator_id="x", indicator_name="x", dataset_code="x")
+        result = normalise_nomis_aps.fn(df=df, indicator_id="x", indicator_name="x", dataset_code="x")
         assert len(result) == 1
         assert result["lad_code"].iloc[0] == _BRADFORD
 
@@ -223,11 +223,11 @@ class TestNormaliseNomisAps:
                 "OBS_VALUE": [42.5],
             }
         )
-        result = normalise_nomis_aps(df=df, indicator_id="x", indicator_name="x", dataset_code="x")
+        result = normalise_nomis_aps.fn(df=df, indicator_id="x", indicator_name="x", dataset_code="x")
         assert result["reference_period"].iloc[0] == date(2023, 1, 1)
 
     def test_custom_unit_propagated(self) -> None:
-        result = normalise_nomis_aps(
+        result = normalise_nomis_aps.fn(
             df=_nomis_aps_df(),
             indicator_id="x",
             indicator_name="x",
@@ -244,19 +244,19 @@ class TestNormaliseNomisAps:
 
 class TestNormaliseNomisAshe:
     def test_indicator_id_fixed_to_median_weekly_earnings(self) -> None:
-        result = normalise_nomis_ashe(df=_nomis_ashe_df())
+        result = normalise_nomis_ashe.fn(df=_nomis_ashe_df())
         assert result["indicator_id"].iloc[0] == "median_weekly_earnings"
 
     def test_unit_fixed_to_gbp(self) -> None:
-        result = normalise_nomis_ashe(df=_nomis_ashe_df())
+        result = normalise_nomis_ashe.fn(df=_nomis_ashe_df())
         assert result["unit"].iloc[0] == "£"
 
     def test_source_fixed_to_nomis(self) -> None:
-        result = normalise_nomis_ashe(df=_nomis_ashe_df())
+        result = normalise_nomis_ashe.fn(df=_nomis_ashe_df())
         assert result["source"].iloc[0] == "nomis"
 
     def test_plain_year_date_parsed_correctly(self) -> None:
-        result = normalise_nomis_ashe(df=_nomis_ashe_df(DATE_NAME=["2022"]))
+        result = normalise_nomis_ashe.fn(df=_nomis_ashe_df(DATE_NAME=["2022"]))
         assert result["reference_period"].iloc[0] == date(2022, 1, 1)
 
     def test_integer_date_name_coerced_to_string(self) -> None:
@@ -269,7 +269,7 @@ class TestNormaliseNomisAshe:
                 "OBS_VALUE": [550.0],
             }
         )
-        result = normalise_nomis_ashe(df=df)
+        result = normalise_nomis_ashe.fn(df=df)
         assert result["reference_period"].iloc[0] == date(2023, 1, 1)
 
     def test_nan_obs_value_rows_dropped(self) -> None:
@@ -281,7 +281,7 @@ class TestNormaliseNomisAshe:
                 "OBS_VALUE": [550.0, None],
             }
         )
-        result = normalise_nomis_ashe(df=df)
+        result = normalise_nomis_ashe.fn(df=df)
         assert len(result) == 1
         assert result["lad_code"].iloc[0] == _BRADFORD
 
@@ -301,7 +301,7 @@ class TestNormaliseToIndicator:
     )
 
     def test_columns_mapped_to_canonical_schema(self) -> None:
-        result = normalise_to_indicator(
+        result = normalise_to_indicator.fn(
             df=self._SOURCE_DF,
             indicator_id="test_indicator",
             indicator_name="Test Indicator",
@@ -322,7 +322,7 @@ class TestNormaliseToIndicator:
         assert result["value"].iloc[0] == pytest.approx(10.5)
 
     def test_output_has_all_required_indicator_columns(self) -> None:
-        result = normalise_to_indicator(
+        result = normalise_to_indicator.fn(
             df=self._SOURCE_DF,
             indicator_id="x",
             indicator_name="x",
@@ -343,7 +343,7 @@ class TestNormaliseToIndicator:
                 "obs": [10.5, None],
             }
         )
-        result = normalise_to_indicator(
+        result = normalise_to_indicator.fn(
             df=df,
             indicator_id="x",
             indicator_name="x",
@@ -358,7 +358,7 @@ class TestNormaliseToIndicator:
         assert result["lad_code"].iloc[0] == _BRADFORD
 
     def test_unit_defaults_to_none(self) -> None:
-        result = normalise_to_indicator(
+        result = normalise_to_indicator.fn(
             df=self._SOURCE_DF,
             indicator_id="x",
             indicator_name="x",
@@ -385,7 +385,7 @@ class TestNormaliseFingertips:
                 _fingertips_df(sex="Female", value=85.0),
             ]
         ).reset_index(drop=True)
-        result = normalise_fingertips(
+        result = normalise_fingertips.fn(
             df=df,
             dataset_code="sheleb_m",
             indicator_id="life_expectancy_male",
@@ -403,7 +403,7 @@ class TestNormaliseFingertips:
                 _fingertips_df(age="10+ yrs", value=100.0),
             ]
         ).reset_index(drop=True)
-        result = normalise_fingertips(
+        result = normalise_fingertips.fn(
             df=df,
             dataset_code="x",
             indicator_id="x",
@@ -422,7 +422,7 @@ class TestNormaliseFingertips:
                 _fingertips_df(category_type="Deprivation decile", value=60.0),
             ]
         ).reset_index(drop=True)
-        result = normalise_fingertips(
+        result = normalise_fingertips.fn(
             df=df,
             dataset_code="x",
             indicator_id="x",
@@ -440,7 +440,7 @@ class TestNormaliseFingertips:
                 _fingertips_df(area_code=_NON_YORKSHIRE, area_name="London", value=80.0),
             ]
         ).reset_index(drop=True)
-        result = normalise_fingertips(
+        result = normalise_fingertips.fn(
             df=df,
             dataset_code="x",
             indicator_id="x",
@@ -455,7 +455,7 @@ class TestNormaliseFingertips:
         """A dataset with no Yorkshire data should raise ValueError, not silently return empty."""
         df = _fingertips_df(area_code=_NON_YORKSHIRE, area_name="London")
         with pytest.raises(ValueError, match="No Fingertips data"):
-            normalise_fingertips(
+            normalise_fingertips.fn(
                 df=df,
                 dataset_code="sheleb_m",
                 indicator_id="x",
@@ -472,7 +472,7 @@ class TestNormaliseFingertips:
                 _fingertips_df(value=75.0),
             ]
         ).reset_index(drop=True)
-        result = normalise_fingertips(
+        result = normalise_fingertips.fn(
             df=df,
             dataset_code="x",
             indicator_id="life_exp",
@@ -484,7 +484,7 @@ class TestNormaliseFingertips:
         assert result["value"].iloc[0] == pytest.approx(75.0)
 
     def test_rolling_average_time_period_parsed(self) -> None:
-        result = normalise_fingertips(
+        result = normalise_fingertips.fn(
             df=_fingertips_df(time_period="2018 - 20"),
             dataset_code="x",
             indicator_id="x",
@@ -495,7 +495,7 @@ class TestNormaliseFingertips:
         assert result["reference_period"].iloc[0] == date(2020, 1, 1)
 
     def test_financial_year_time_period_parsed(self) -> None:
-        result = normalise_fingertips(
+        result = normalise_fingertips.fn(
             df=_fingertips_df(time_period="2019/20"),
             dataset_code="x",
             indicator_id="x",
@@ -512,7 +512,7 @@ class TestNormaliseFingertips:
                 _fingertips_df(area_code=_CALDERDALE, area_name="Calderdale", value=float("nan")),
             ]
         ).reset_index(drop=True)
-        result = normalise_fingertips(
+        result = normalise_fingertips.fn(
             df=df,
             dataset_code="x",
             indicator_id="x",
@@ -524,7 +524,7 @@ class TestNormaliseFingertips:
         assert result["lad_code"].iloc[0] == _BRADFORD
 
     def test_unit_propagated_to_output(self) -> None:
-        result = normalise_fingertips(
+        result = normalise_fingertips.fn(
             df=_fingertips_df(),
             dataset_code="x",
             indicator_id="x",
@@ -536,7 +536,7 @@ class TestNormaliseFingertips:
         assert result["unit"].iloc[0] == "Years"
 
     def test_source_is_fingertips(self) -> None:
-        result = normalise_fingertips(
+        result = normalise_fingertips.fn(
             df=_fingertips_df(),
             dataset_code="x",
             indicator_id="x",
@@ -547,7 +547,7 @@ class TestNormaliseFingertips:
         assert result["source"].iloc[0] == "fingertips"
 
     def test_output_has_all_required_indicator_columns(self) -> None:
-        result = normalise_fingertips(
+        result = normalise_fingertips.fn(
             df=_fingertips_df(),
             dataset_code="x",
             indicator_id="x",
