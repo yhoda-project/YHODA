@@ -291,8 +291,10 @@ def normalise_fingertips(
             f"(dataset_code={dataset_code!r}). Check indicator ID and sex filter."
         )
 
-    # Parse time period → date
-    df["reference_period"] = df["Time period"].apply(_parse_fingertips_period)
+    # Drop rows with no time period, then cast to str before parsing —
+    # Fingertips returns mixed-type columns (some years arrive as integers).
+    df = df.dropna(subset=["Time period"]).copy()
+    df["reference_period"] = df["Time period"].astype(str).apply(_parse_fingertips_period)
 
     now = datetime.utcnow()
     result = pd.DataFrame(

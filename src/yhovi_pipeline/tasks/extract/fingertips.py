@@ -86,6 +86,6 @@ def extract_fingertips_indicators(indicator_id: int) -> pd.DataFrame:
     response = requests.get(url, timeout=120)
     response.raise_for_status()
 
-    df = pd.read_csv(StringIO(response.text))
+    df = pd.read_csv(StringIO(response.text), low_memory=False)
     logger.info("Received %d rows for Fingertips indicator %d", len(df), indicator_id)
     return df
