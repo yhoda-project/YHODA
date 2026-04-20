@@ -54,8 +54,7 @@ def validate_schema(
     missing = set(required_columns) - set(df.columns)
     if missing:
         raise ValueError(
-            f"Missing columns from {source}: {sorted(missing)}. "
-            f"Got: {list(df.columns)}"
+            f"Missing columns from {source}: {sorted(missing)}. Got: {list(df.columns)}"
         )
 
     logger.info("Schema OK for %s: %d rows, columns %s", source, len(df), list(df.columns))

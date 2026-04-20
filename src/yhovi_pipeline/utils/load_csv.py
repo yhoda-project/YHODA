@@ -379,11 +379,13 @@ def wide_to_long(df: pd.DataFrame, dataset_code: str) -> pd.DataFrame:
     meta = DATASET_REGISTRY[dataset_code]
 
     # Normalise non-standard column names produced by some preprocessing scripts
-    df = df.rename(columns={
-        "LAD_Name.x": "LAD_Name",
-        "Area Names": "LAD_Name",
-        "Area Codes": "LAD_Code",
-    })
+    df = df.rename(
+        columns={
+            "LAD_Name.x": "LAD_Name",
+            "Area Names": "LAD_Name",
+            "Area Codes": "LAD_Code",
+        }
+    )
 
     year_cols = [c for c in df.columns if c not in ("LAD_Name", "LAD_Code")]
 
@@ -512,7 +514,14 @@ BASE_PATH = "/mnt/yhoda_drive/Shared/1_Yorkshire_Vitality_Observatory/data_prepr
 
 # Long-format files: (dataset_code, relative path, lad_code_col, lad_name_col, year_col, value_col)
 LONG_CSV_FILES: list[tuple[str, str, str, str, str, str]] = [
-    ("ebebcr", "ebebcr/ebebcr_preprocessed_v2.csv", "LAD23CD", "LocalAuthority", "Year", "ChurnRate_per_10000"),
+    (
+        "ebebcr",
+        "ebebcr/ebebcr_preprocessed_v2.csv",
+        "LAD23CD",
+        "LocalAuthority",
+        "Year",
+        "ChurnRate_per_10000",
+    ),
     ("ebegvala", "ebegvala/ebegvala_v1_3.csv", "LAD24CD", "LAD24NM", "Year", "Value"),
 ]
 
@@ -606,7 +615,9 @@ def load_all() -> None:
         path = f"{BASE_PATH}/{rel_path}"
         print(f"Loading {dataset_code} from {path}...")
         try:
-            count = load_long_dataset(path, dataset_code, lad_code_col, lad_name_col, year_col, value_col)
+            count = load_long_dataset(
+                path, dataset_code, lad_code_col, lad_name_col, year_col, value_col
+            )
             total += count
         except Exception as e:
             print(f"  ERROR loading {dataset_code}: {e}")

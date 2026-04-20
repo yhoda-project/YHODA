@@ -29,6 +29,7 @@ def _get_logger() -> logging.Logger:
     except Exception:
         return _logger
 
+
 BASE_URL = "https://www.nomisweb.co.uk/api/v01/dataset"
 
 # APS percentage dataset (NM_17_5) variable codes for aged 16-64.
@@ -42,9 +43,7 @@ APS_VARIABLES: dict[str, int] = {
 }
 
 # Columns to request from the APS API.
-_APS_SELECT = (
-    "date_name,geography_name,geography_code,variable_name,variable_code,obs_value"
-)
+_APS_SELECT = "date_name,geography_name,geography_code,variable_name,variable_code,obs_value"
 
 # Columns to request from the ASHE API.
 _ASHE_SELECT = "date_name,geography_name,geography_code,obs_value"
@@ -70,6 +69,7 @@ def _build_nomis_url(
         **extra_params: Dataset-specific parameters (e.g. variable, pay, sex, item,
             measures). List values are joined with commas.
     """
+
     def _fmt(v: object) -> str:
         return ",".join(str(x) for x in v) if isinstance(v, list) else str(v)
 
@@ -117,16 +117,11 @@ def extract_aps(
 
     if variable not in APS_VARIABLES:
         raise ValueError(
-            f"Unknown APS variable {variable!r}. "
-            f"Valid keys: {list(APS_VARIABLES.keys())}"
+            f"Unknown APS variable {variable!r}. Valid keys: {list(APS_VARIABLES.keys())}"
         )
 
     lad_codes = settings.yorkshire_lad_codes
-    uid = (
-        settings.nomis_api_key.get_secret_value()
-        if settings.nomis_api_key
-        else None
-    )
+    uid = settings.nomis_api_key.get_secret_value() if settings.nomis_api_key else None
 
     url = _build_nomis_url(
         "NM_17_5",
@@ -138,7 +133,11 @@ def extract_aps(
         uid=uid,
     )
 
-    logger.info("Fetching APS %s from Nomis: %s", variable, url if not uid else url.split("uid=")[0] + "uid=***")
+    logger.info(
+        "Fetching APS %s from Nomis: %s",
+        variable,
+        url if not uid else url.split("uid=")[0] + "uid=***",
+    )
     df = _fetch_nomis_csv(url)
     logger.info("Received %d rows for APS %s", len(df), variable)
 
@@ -169,18 +168,14 @@ def extract_ashe(time: str = "latest") -> pd.DataFrame:
     settings = get_settings()
 
     lad_codes = settings.yorkshire_lad_codes
-    uid = (
-        settings.nomis_api_key.get_secret_value()
-        if settings.nomis_api_key
-        else None
-    )
+    uid = settings.nomis_api_key.get_secret_value() if settings.nomis_api_key else None
 
     url = _build_nomis_url(
         "NM_99_1",
         geography=lad_codes,
-        pay=1,           # Gross weekly pay
-        sex=7,           # Total (all genders + employment types)
-        item=2,          # Median
+        pay=1,  # Gross weekly pay
+        sex=7,  # Total (all genders + employment types)
+        item=2,  # Median
         measures=20100,  # Value
         time=time,
         select=_ASHE_SELECT,

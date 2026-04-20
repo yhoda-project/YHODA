@@ -207,7 +207,9 @@ class TestNormaliseNomisAps:
                 "OBS_VALUE": [42.5, None],
             }
         )
-        result = normalise_nomis_aps.fn(df=df, indicator_id="x", indicator_name="x", dataset_code="x")
+        result = normalise_nomis_aps.fn(
+            df=df, indicator_id="x", indicator_name="x", dataset_code="x"
+        )
         assert len(result) == 1
         assert result["lad_code"].iloc[0] == _BRADFORD
 
@@ -223,7 +225,9 @@ class TestNormaliseNomisAps:
                 "OBS_VALUE": [42.5],
             }
         )
-        result = normalise_nomis_aps.fn(df=df, indicator_id="x", indicator_name="x", dataset_code="x")
+        result = normalise_nomis_aps.fn(
+            df=df, indicator_id="x", indicator_name="x", dataset_code="x"
+        )
         assert result["reference_period"].iloc[0] == date(2023, 1, 1)
 
     def test_custom_unit_propagated(self) -> None:

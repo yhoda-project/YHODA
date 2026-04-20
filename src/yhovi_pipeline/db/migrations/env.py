@@ -45,8 +45,7 @@ def _get_url() -> str:
     url = os.environ.get("DATABASE_URL")
     if not url:
         raise RuntimeError(
-            "DATABASE_URL environment variable is not set. "
-            "Export it before running Alembic."
+            "DATABASE_URL environment variable is not set. Export it before running Alembic."
         )
     return url
 

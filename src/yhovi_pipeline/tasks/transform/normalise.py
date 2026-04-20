@@ -305,9 +305,7 @@ def normalise_fingertips(
     # the same response as the main LAD-level aggregates (null Category Type).
     # We only want the aggregates.
     df = df[
-        (df["Sex"] == sex_filter)
-        & (df["Age"] == age_filter)
-        & (df["Category Type"].isna())
+        (df["Sex"] == sex_filter) & (df["Age"] == age_filter) & (df["Category Type"].isna())
     ].copy()
 
     # Filter to Yorkshire LADs

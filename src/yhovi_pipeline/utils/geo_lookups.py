@@ -30,7 +30,9 @@ def get_geo_lookup() -> pd.DataFrame:
 
     with engine.connect() as conn:
         df = pd.read_sql(
-            text("SELECT lsoa_code, lsoa_name, msoa_code, msoa_name, lad_code, lad_name, region_code, region_name FROM geo_lookup"),
+            text(
+                "SELECT lsoa_code, lsoa_name, msoa_code, msoa_name, lad_code, lad_name, region_code, region_name FROM geo_lookup"
+            ),
             conn,
         )
 

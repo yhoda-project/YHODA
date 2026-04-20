@@ -37,7 +37,9 @@ def load_geo_lookup(path: str = GEO_CSV_PATH) -> int:
     settings = get_settings()
     engine = create_engine(settings.database_url.get_secret_value())
 
-    df = pd.read_csv(path, usecols=["LSOA21CD", "LSOA21NM", "MSOA21CD", "MSOA21NM", "LAD23CD", "LAD23NM"])
+    df = pd.read_csv(
+        path, usecols=["LSOA21CD", "LSOA21NM", "MSOA21CD", "MSOA21NM", "LAD23CD", "LAD23NM"]
+    )
 
     # Filter to Yorkshire LADs only
     df = df[df["LAD23CD"].isin(YORKSHIRE_LAD_CODES)]
