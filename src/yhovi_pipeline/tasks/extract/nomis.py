@@ -13,7 +13,7 @@ import logging
 from io import StringIO
 
 import pandas as pd
-import requests  # type: ignore[import-untyped]
+import requests
 from prefect import task
 from prefect.logging import get_run_logger
 
@@ -22,7 +22,7 @@ from yhovi_pipeline.config import get_settings
 _logger = logging.getLogger(__name__)
 
 
-def _get_logger() -> logging.Logger:
+def _get_logger() -> logging.Logger | logging.LoggerAdapter[logging.Logger]:
     """Return the Prefect run logger if available, else a standard logger."""
     try:
         return get_run_logger()
