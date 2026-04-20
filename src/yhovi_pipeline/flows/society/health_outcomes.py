@@ -17,10 +17,10 @@ Datasets loaded:
 | sheleb_f | Life expectancy   | Fem  | 90366 (PHOF A01a) - Female dimension        |
 |          | at birth          |      |                                             |
 +----------+-------------------+------+---------------------------------------------+
-| shehle_m | Healthy life exp. | Male | 90048 (PHOF A02a)                           |
+| shehle_m | Healthy life exp. | Male | 90362 (PHOF A01a)                           |
 |          | at birth          |      |                                             |
 +----------+-------------------+------+---------------------------------------------+
-| shehle_f | Healthy life exp. | Fem  | 90049 (PHOF A02b)                           |
+| shehle_f | Healthy life exp. | Fem  | 90362 (PHOF A01a) - Female dimension        |
 |          | at birth          |      |                                             |
 +----------+-------------------+------+---------------------------------------------+
 """
@@ -67,14 +67,14 @@ HEALTH_DATASETS: dict[str, dict] = {
         "unit": "Years",
     },
     "shehle_m": {
-        "fingertips_id": 90048,
+        "fingertips_id": 90362,
         "indicator_id": "healthy_life_expectancy_male",
         "indicator_name": "Healthy life expectancy at birth (male)",
         "sex_filter": "Male",
         "unit": "Years",
     },
     "shehle_f": {
-        "fingertips_id": 90049,
+        "fingertips_id": 90362,
         "indicator_id": "healthy_life_expectancy_female",
         "indicator_name": "Healthy life expectancy at birth (female)",
         "sex_filter": "Female",
