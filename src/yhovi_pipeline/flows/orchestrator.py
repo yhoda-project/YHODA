@@ -13,8 +13,8 @@ from prefect.task_runners import ThreadPoolTaskRunner
 from yhovi_pipeline.flows.economy.business_demography import business_demography_flow
 from yhovi_pipeline.flows.economy.claimant_count import claimant_count_flow
 from yhovi_pipeline.flows.economy.earnings import earnings_flow
-from yhovi_pipeline.flows.economy.gdp_gva import gdp_gva_flow
 from yhovi_pipeline.flows.economy.employment_jobs import employment_jobs_flow
+from yhovi_pipeline.flows.economy.gdp_gva import gdp_gva_flow
 from yhovi_pipeline.flows.environment.air_quality import air_quality_flow
 from yhovi_pipeline.flows.environment.energy_consumption import energy_consumption_flow
 from yhovi_pipeline.flows.society.crime_statistics import crime_statistics_flow
