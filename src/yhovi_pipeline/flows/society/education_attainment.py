@@ -41,7 +41,7 @@ NOMIS_APS_COLUMNS = ["DATE_NAME", "GEOGRAPHY_NAME", "GEOGRAPHY_CODE", "VARIABLE_
     retry_delay_seconds=300,
     task_runner=ThreadPoolTaskRunner(max_workers=4),  # type: ignore[arg-type]
 )
-def education_attainment_flow(time: str = "latest") -> None:
+def education_attainment_flow(time: str = "latestMinus1,latest") -> None:
     """Orchestrate the education attainment ETL pipeline.
 
     Extracts APS qualification indicators from NOMIS, validates,
@@ -49,8 +49,9 @@ def education_attainment_flow(time: str = "latest") -> None:
     data warehouse.
 
     Args:
-        time: Nomis time parameter — "latest" for most recent period,
-            or a range like "2004-12-2024-12" for historical data.
+        time: Nomis time parameter. Defaults to the two most recent periods
+            so that if the latest APS period has not yet been published for
+            qualification variables, the previous period is still loaded.
     """
     for variable_key, meta in QUALIFICATION_DATASETS.items():
         dataset_code = meta["dataset_code"]
