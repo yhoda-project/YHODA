@@ -342,6 +342,61 @@ DATASET_REGISTRY: dict[str, dict[str, str]] = {
         "source": "beis",
         "subdomain": "Net Zero",
     },
+    # -----------------------------------------------------------------------
+    # Employment and Jobs — APS: economically inactive breakdown
+    # EEJPEI splits into two indicators on disk (eejpei_w / eejpei_dw).
+    # -----------------------------------------------------------------------
+    "eejpei_w": {
+        "indicator_id": "econ_inactive_want_job_pct",
+        "indicator_name": "Percentage of economically inactive who want a job",
+        "unit": "%",
+        "source": "nomis",
+        "subdomain": "Employment and Jobs",
+    },
+    "eejpei_dw": {
+        "indicator_id": "econ_inactive_not_want_job_pct",
+        "indicator_name": "Percentage of economically inactive who do not want a job",
+        "unit": "%",
+        "source": "nomis",
+        "subdomain": "Employment and Jobs",
+    },
+    # -----------------------------------------------------------------------
+    # Earnings and Income — ASHE Table 8 (percentiles)
+    # EEIGI (Gini) is omitted: the preprocessed CSV lacks a LAD_Code column.
+    # EEIRATIO is omitted: no preprocessed data on drive yet.
+    # -----------------------------------------------------------------------
+    "eei10": {
+        "indicator_id": "p10_weekly_earnings",
+        "indicator_name": "10th percentile of gross weekly earnings",
+        "unit": "£",
+        "source": "ashe",
+        "subdomain": "Earnings and Income",
+    },
+    "eei80": {
+        "indicator_id": "p80_weekly_earnings",
+        "indicator_name": "80th percentile of gross weekly earnings",
+        "unit": "£",
+        "source": "ashe",
+        "subdomain": "Earnings and Income",
+    },
+    # -----------------------------------------------------------------------
+    # Natural Environment — ONS Access to gardens and public green space (2020)
+    # No preprocessed data on drive yet — entries here for when CSVs arrive.
+    # -----------------------------------------------------------------------
+    "eneos": {
+        "indicator_id": "pct_properties_private_outdoor_space",
+        "indicator_name": "Proportion of properties with access to private outdoor space",
+        "unit": "%",
+        "source": "ons",
+        "subdomain": "Natural Environment",
+    },
+    "enep": {
+        "indicator_id": "avg_distance_nearest_park_m",
+        "indicator_name": "Average distance to nearest park, public garden or playing field",
+        "unit": "m",
+        "source": "ons",
+        "subdomain": "Natural Environment",
+    },
 }
 
 
@@ -507,6 +562,10 @@ CSV_FILES: list[tuple[str, str]] = [
     ("enz_co2", "enz/carbondioxide/enz_carbondioxide_preprocessed_v1_7.csv"),
     ("enz_ch4", "enz/methane/enz_methane_preprocessed_v1_7.csv"),
     ("enz_n2o", "enz/nitrousoxide/enz_nitrousoxide_preprocessed_v1_7.csv"),
+    ("eei10", "eeigi/10percentile/eeigi_10_preprocessing_v1_5.csv"),
+    ("eei80", "eeigi/80percentile/eeigi_80_preprocessing_v1_5.csv"),
+    ("eejpei_w", "eejpei/eejpei_w/eejpei_w_preprocessed_v3.csv"),
+    ("eejpei_dw", "eejpei/eejpei_dw/eejpei_dw_preprocessed_v3.csv"),
 ]
 
 BASE_PATH = "/mnt/yhoda_drive/Shared/1_Yorkshire_Vitality_Observatory/data_preprocessing"
