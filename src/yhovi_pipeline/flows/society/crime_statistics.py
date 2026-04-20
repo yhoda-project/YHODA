@@ -11,7 +11,7 @@ from prefect.task_runners import ThreadPoolTaskRunner
 
 
 @flow(
-    name="society/crime-statistics",
+    name="society-crime-statistics",
     description="Extract Home Office recorded crime statistics for Yorkshire LADs.",
     retries=1,
     retry_delay_seconds=300,

@@ -13,7 +13,7 @@ from prefect.task_runners import ThreadPoolTaskRunner
 
 
 @flow(
-    name="environment/air-quality",
+    name="environment-air-quality",
     description="Extract DEFRA AURN air quality data for Yorkshire LADs.",
     retries=1,
     retry_delay_seconds=300,

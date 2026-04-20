@@ -12,7 +12,7 @@ from prefect.task_runners import ThreadPoolTaskRunner
 
 
 @flow(
-    name="society/housing-tenure",
+    name="society-housing-tenure",
     description="Extract housing tenure statistics for Yorkshire LADs.",
     retries=1,
     retry_delay_seconds=300,

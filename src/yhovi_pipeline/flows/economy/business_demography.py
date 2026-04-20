@@ -12,7 +12,7 @@ from prefect.task_runners import ThreadPoolTaskRunner
 
 
 @flow(
-    name="economy/business-demography",
+    name="economy-business-demography",
     description="Extract ONS business demography data for Yorkshire LADs.",
     retries=1,
     retry_delay_seconds=300,

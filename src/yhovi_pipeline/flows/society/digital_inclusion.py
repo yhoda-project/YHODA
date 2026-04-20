@@ -12,7 +12,7 @@ from prefect.task_runners import ThreadPoolTaskRunner
 
 
 @flow(
-    name="society/digital-inclusion",
+    name="society-digital-inclusion",
     description="Extract Ofcom / DCMS digital inclusion indicators for Yorkshire LADs.",
     retries=1,
     retry_delay_seconds=300,

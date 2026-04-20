@@ -12,7 +12,7 @@ from prefect.task_runners import ThreadPoolTaskRunner
 
 
 @flow(
-    name="environment/energy-consumption",
+    name="environment-energy-consumption",
     description="Extract BEIS sub-national energy consumption data for Yorkshire LADs.",
     retries=1,
     retry_delay_seconds=300,

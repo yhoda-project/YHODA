@@ -12,7 +12,7 @@ from prefect.task_runners import ThreadPoolTaskRunner
 
 
 @flow(
-    name="society/physical-activity",
+    name="society-physical-activity",
     description="Extract Sport England Active Lives physical activity data for Yorkshire LADs.",
     retries=1,
     retry_delay_seconds=300,

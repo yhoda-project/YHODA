@@ -12,7 +12,7 @@ from prefect.task_runners import ThreadPoolTaskRunner
 
 
 @flow(
-    name="economy/claimant-count",
+    name="economy-claimant-count",
     description="Extract DWP claimant count data for Yorkshire LADs.",
     retries=1,
     retry_delay_seconds=300,

@@ -12,7 +12,7 @@ from prefect.task_runners import ThreadPoolTaskRunner
 
 
 @flow(
-    name="society/deprivation-imd",
+    name="society-deprivation-imd",
     description="Extract MHCLG Indices of Multiple Deprivation for Yorkshire LADs.",
     retries=1,
     retry_delay_seconds=300,

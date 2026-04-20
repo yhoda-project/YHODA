@@ -27,7 +27,7 @@ from yhovi_pipeline.flows.society.physical_activity import physical_activity_flo
 
 
 @flow(
-    name="orchestrator/full-refresh",
+    name="orchestrator-full-refresh",
     description="Run all YHODA domain flows in sequence.",
     retries=0,
     task_runner=ThreadPoolTaskRunner(max_workers=1),  # type: ignore[arg-type]

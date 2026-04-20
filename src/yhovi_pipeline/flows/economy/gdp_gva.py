@@ -12,7 +12,7 @@ from prefect.task_runners import ThreadPoolTaskRunner
 
 
 @flow(
-    name="economy/gdp-gva",
+    name="economy-gdp-gva",
     description="Extract ONS GVA / regional GDP data for Yorkshire LADs.",
     retries=1,
     retry_delay_seconds=300,
