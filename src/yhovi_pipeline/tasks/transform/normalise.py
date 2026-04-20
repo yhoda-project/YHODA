@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import re
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 import pandas as pd
 from prefect import task
@@ -88,7 +88,7 @@ def normalise_to_indicator(
     """
     logger = _get_logger()
 
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     result = pd.DataFrame(
         {
             "indicator_id": indicator_id,
@@ -138,7 +138,7 @@ def normalise_nomis_aps(
     """
     logger = _get_logger()
 
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     result = pd.DataFrame(
         {
             "indicator_id": indicator_id,
@@ -181,7 +181,7 @@ def normalise_nomis_ashe(
     """
     logger = _get_logger()
 
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     result = pd.DataFrame(
         {
             "indicator_id": "median_weekly_earnings",
@@ -324,7 +324,7 @@ def normalise_fingertips(
     df = df.dropna(subset=["Time period"]).copy()
     df["reference_period"] = df["Time period"].astype(str).apply(_parse_fingertips_period)
 
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     result = pd.DataFrame(
         {
             "indicator_id": indicator_id,
