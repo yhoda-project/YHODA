@@ -84,3 +84,8 @@ deployments:
   - name: environment/energy-consumption
     entrypoint: src/yhovi_pipeline/flows/environment/energy_consumption.py:energy_consumption_flow
     <<: *common
+
+  # ── Orchestrator ───────────────────────────────────────────────────────────
+  - name: orchestrator/full-refresh
+    entrypoint: src/yhovi_pipeline/flows/orchestrator.py:full_refresh_flow
+    <<: *common
