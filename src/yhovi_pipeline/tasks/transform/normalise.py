@@ -208,6 +208,24 @@ def normalise_nomis_ashe(
 # ---------------------------------------------------------------------------
 
 
+def _resolve_century(start_year: int, end_2digit: int) -> int:
+    """Return the full 4-digit end year given a 4-digit start year and a 2-digit end suffix.
+
+    Handles century crossovers correctly: "1999/00" → 2000, "2019/20" → 2020.
+
+    Args:
+        start_year: Full 4-digit start year (e.g. 1999 or 2019).
+        end_2digit: 2-digit end-year suffix (e.g. 0 for "00", 20 for "20").
+
+    Returns:
+        Full 4-digit end year.
+    """
+    century = start_year // 100
+    if end_2digit < start_year % 100:
+        century += 1
+    return century * 100 + end_2digit
+
+
 def _parse_fingertips_period(period: str) -> date:
     """Parse a Fingertips time period string to a ``date``.
 
@@ -231,14 +249,12 @@ def _parse_fingertips_period(period: str) -> date:
     # "2018 - 20" or "2018-20" — rolling average, take end year
     m = re.fullmatch(r"(\d{4})\s*-\s*(\d{2})", period)
     if m:
-        century = m.group(1)[:2]
-        return date(int(century + m.group(2)), 1, 1)
+        return date(_resolve_century(int(m.group(1)), int(m.group(2))), 1, 1)
 
     # "2019/20" — financial year, take end year
     m = re.fullmatch(r"(\d{4})/(\d{2})", period)
     if m:
-        century = m.group(1)[:2]
-        return date(int(century + m.group(2)), 1, 1)
+        return date(_resolve_century(int(m.group(1)), int(m.group(2))), 1, 1)
 
     # "2021" — single calendar year
     if re.fullmatch(r"\d{4}", period):
