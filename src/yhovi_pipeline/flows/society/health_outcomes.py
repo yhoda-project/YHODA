@@ -1,7 +1,28 @@
 """Health Outcomes flow.
 
 Extracts health outcome indicators from NHS Fingertips (Public Health Profiles)
-for all Yorkshire LADs.
+for all Yorkshire LADs and loads them into the data warehouse.
+
+Datasets loaded:
+
++----------+-------------------+------+---------------------------------------------+
+| Code     | Indicator         | Sex  | Fingertips ID                               |
++==========+===================+======+=============================================+
+| sheu75   | Under-75          | Pers | 41001 (PHOF B13)                            |
+|          | preventable mort. |      |                                             |
++----------+-------------------+------+---------------------------------------------+
+| sheleb_m | Life expectancy   | Male | 90366 (PHOF A01a)                           |
+|          | at birth          |      |                                             |
++----------+-------------------+------+---------------------------------------------+
+| sheleb_f | Life expectancy   | Fem  | 90366 (PHOF A01a) – Female dimension        |
+|          | at birth          |      |                                             |
++----------+-------------------+------+---------------------------------------------+
+| shehle_m | Healthy life exp. | Male | 90048 (PHOF A02a)                           |
+|          | at birth          |      |                                             |
++----------+-------------------+------+---------------------------------------------+
+| shehle_f | Healthy life exp. | Fem  | 90049 (PHOF A02b)                           |
+|          | at birth          |      |                                             |
++----------+-------------------+------+---------------------------------------------+
 """
 
 from __future__ import annotations
@@ -9,9 +30,61 @@ from __future__ import annotations
 from prefect import flow
 from prefect.task_runners import ThreadPoolTaskRunner
 
+from yhovi_pipeline.db.models import ExtractionStatus
+from yhovi_pipeline.tasks.extract.fingertips import (
+    FINGERTIPS_REQUIRED_COLUMNS,
+    extract_fingertips_indicators,
+)
+from yhovi_pipeline.tasks.load.database import upsert_indicators, write_metadata
+from yhovi_pipeline.tasks.transform.normalise import normalise_fingertips
+from yhovi_pipeline.tasks.transform.validate import validate_schema
+
+# ---------------------------------------------------------------------------
+# Dataset registry
+# Each entry maps an internal dataset code to the Fingertips indicator ID,
+# the sex dimension to filter on, and the metadata written to the DB.
+# ---------------------------------------------------------------------------
+HEALTH_DATASETS: dict[str, dict] = {
+    "sheu75": {
+        "fingertips_id": 41001,
+        "indicator_id": "preventable_mortality_u75",
+        "indicator_name": "Under-75 mortality rate from causes considered preventable",
+        "sex_filter": "Persons",
+        "unit": "Rate per 100,000",
+    },
+    "sheleb_m": {
+        "fingertips_id": 90366,
+        "indicator_id": "life_expectancy_male",
+        "indicator_name": "Life expectancy at birth (male)",
+        "sex_filter": "Male",
+        "unit": "Years",
+    },
+    "sheleb_f": {
+        "fingertips_id": 90366,
+        "indicator_id": "life_expectancy_female",
+        "indicator_name": "Life expectancy at birth (female)",
+        "sex_filter": "Female",
+        "unit": "Years",
+    },
+    "shehle_m": {
+        "fingertips_id": 90048,
+        "indicator_id": "healthy_life_expectancy_male",
+        "indicator_name": "Healthy life expectancy at birth (male)",
+        "sex_filter": "Male",
+        "unit": "Years",
+    },
+    "shehle_f": {
+        "fingertips_id": 90049,
+        "indicator_id": "healthy_life_expectancy_female",
+        "indicator_name": "Healthy life expectancy at birth (female)",
+        "sex_filter": "Female",
+        "unit": "Years",
+    },
+}
+
 
 @flow(
-    name="society/health-outcomes",
+    name="society-health-outcomes",
     description="Extract NHS Fingertips health outcome indicators for Yorkshire LADs.",
     retries=1,
     retry_delay_seconds=300,
@@ -20,12 +93,50 @@ from prefect.task_runners import ThreadPoolTaskRunner
 def health_outcomes_flow() -> None:
     """Orchestrate the health outcomes ETL pipeline.
 
-    Steps (to be implemented in Phase 2):
-        1. Extract indicator data from the Fingertips API.
-        2. Filter to Yorkshire LADs and relevant profiles.
-        3. Normalise to the canonical ``Indicator`` schema.
-        4. Upsert into the data warehouse.
-        5. Write audit metadata.
+    For each of the five health datasets, the flow:
+    1. Fetches all available time-series data from the NHS Fingertips API.
+    2. Validates the response schema.
+    3. Normalises to the canonical Indicator schema (filters to Yorkshire LADs
+       and the appropriate sex dimension).
+    4. Upserts rows into the PostgreSQL data warehouse.
+    5. Writes audit metadata.
     """
-    # TODO: implement — call extract, transform, and load tasks
-    raise NotImplementedError("health_outcomes_flow not yet implemented")
+    for dataset_code, meta in HEALTH_DATASETS.items():
+        try:
+            raw_df = extract_fingertips_indicators(
+                indicator_id=meta["fingertips_id"],
+            )
+
+            validated_df = validate_schema(
+                df=raw_df,
+                required_columns=FINGERTIPS_REQUIRED_COLUMNS,
+                source="fingertips",
+            )
+
+            indicator_df = normalise_fingertips(
+                df=validated_df,
+                dataset_code=dataset_code,
+                indicator_id=meta["indicator_id"],
+                indicator_name=meta["indicator_name"],
+                sex_filter=meta["sex_filter"],
+                unit=meta["unit"],
+            )
+
+            rows_loaded = upsert_indicators(df=indicator_df, dataset_code=dataset_code)
+
+            write_metadata(
+                dataset_code=dataset_code,
+                source="fingertips",
+                status=ExtractionStatus.SUCCESS,
+                rows_extracted=len(raw_df),
+                rows_loaded=rows_loaded,
+            )
+
+        except Exception as e:
+            write_metadata(
+                dataset_code=dataset_code,
+                source="fingertips",
+                status=ExtractionStatus.FAILED,
+                error_message=str(e)[:500],
+            )
+            raise

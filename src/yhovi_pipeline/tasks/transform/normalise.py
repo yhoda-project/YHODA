@@ -14,6 +14,8 @@ import pandas as pd
 from prefect import task
 from prefect.logging import get_run_logger
 
+from yhovi_pipeline.config import YORKSHIRE_LAD_CODES
+
 _logger = logging.getLogger(__name__)
 
 
@@ -198,4 +200,122 @@ def normalise_nomis_ashe(
 
     result = result.dropna(subset=["value"])
     logger.info("Normalised %d rows for ASHE median weekly earnings", len(result))
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Fingertips helpers
+# ---------------------------------------------------------------------------
+
+
+def _parse_fingertips_period(period: str) -> date:
+    """Parse a Fingertips time period string to a ``date``.
+
+    Handles three common formats returned by the Fingertips API:
+
+    - Rolling average ``"2018 - 20"`` → ``date(2020, 1, 1)`` (end year)
+    - Financial year ``"2019/20"``     → ``date(2020, 1, 1)`` (end year)
+    - Single year    ``"2021"``        → ``date(2021, 1, 1)``
+
+    Args:
+        period: Raw ``Time period`` string from the Fingertips CSV.
+
+    Returns:
+        A ``date`` representing the end of the reported period.
+
+    Raises:
+        ValueError: If the string cannot be parsed.
+    """
+    period = period.strip()
+
+    # "2018 - 20" or "2018-20" — rolling average, take end year
+    m = re.fullmatch(r"(\d{4})\s*-\s*(\d{2})", period)
+    if m:
+        century = m.group(1)[:2]
+        return date(int(century + m.group(2)), 1, 1)
+
+    # "2019/20" — financial year, take end year
+    m = re.fullmatch(r"(\d{4})/(\d{2})", period)
+    if m:
+        century = m.group(1)[:2]
+        return date(int(century + m.group(2)), 1, 1)
+
+    # "2021" — single calendar year
+    if re.fullmatch(r"\d{4}", period):
+        return date(int(period), 1, 1)
+
+    raise ValueError(f"Cannot parse Fingertips time period: {period!r}")
+
+
+@task(
+    name="transform/normalise/fingertips",
+    description="Normalise a Fingertips API response to the canonical Indicator schema.",
+)
+def normalise_fingertips(
+    df: pd.DataFrame,
+    dataset_code: str,
+    indicator_id: str,
+    indicator_name: str,
+    sex_filter: str,
+    unit: str | None = None,
+) -> pd.DataFrame:
+    """Transform a Fingertips API response into the canonical Indicator schema.
+
+    Filters the raw England-wide DataFrame down to Yorkshire LADs and the
+    requested sex dimension, then maps columns to the ``Indicator`` ORM shape.
+
+    Args:
+        df: Raw DataFrame from ``extract_fingertips_indicators``.
+        dataset_code: Internal dataset code (e.g. ``"sheleb_m"``).
+        indicator_id: Machine-readable indicator identifier stored in the DB
+            (e.g. ``"life_expectancy_male"``).
+        indicator_name: Human-readable indicator name.
+        sex_filter: Value of the ``Sex`` column to keep
+            (``"Male"``, ``"Female"``, or ``"Persons"``).
+        unit: Optional unit of measurement (e.g. ``"Years"``).
+
+    Returns:
+        DataFrame with columns matching the ``Indicator`` ORM model.
+    """
+    logger = _get_logger()
+
+    # Filter to the requested sex dimension
+    df = df[df["Sex"] == sex_filter].copy()
+
+    # Filter to Yorkshire LADs
+    df = df[df["Area Code"].isin(YORKSHIRE_LAD_CODES)].copy()
+
+    if df.empty:
+        raise ValueError(
+            f"No Fingertips data for sex={sex_filter!r} in Yorkshire LADs "
+            f"(dataset_code={dataset_code!r}). Check indicator ID and sex filter."
+        )
+
+    # Parse time period → date
+    df["reference_period"] = df["Time period"].apply(_parse_fingertips_period)
+
+    now = datetime.utcnow()
+    result = pd.DataFrame(
+        {
+            "indicator_id": indicator_id,
+            "indicator_name": indicator_name,
+            "lad_code": df["Area Code"].values,
+            "lad_name": df["Area Name"].values,
+            "reference_period": df["reference_period"].values,
+            "value": pd.to_numeric(df["Value"], errors="coerce"),
+            "unit": unit,
+            "source": "fingertips",
+            "dataset_code": dataset_code,
+            "created_at": now,
+            "updated_at": now,
+        }
+    )
+
+    result = result.dropna(subset=["value"])
+    logger.info(
+        "Normalised %d rows for %s (%s) from Fingertips",
+        len(result),
+        indicator_id,
+        sex_filter,
+    )
     return result
