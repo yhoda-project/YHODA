@@ -11,7 +11,6 @@ import pytest
 from yhovi_pipeline.config import Settings, get_settings
 
 
-
 @pytest.fixture(autouse=False)
 def test_settings(monkeypatch: pytest.MonkeyPatch) -> Settings:
     """Return a ``Settings`` instance suitable for testing.
