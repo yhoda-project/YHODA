@@ -314,6 +314,21 @@ def normalise_fingertips(
     )
 
     result = result.dropna(subset=["value"])
+
+    # Fingertips returns multiple age groups per LAD/period/sex for some indicators.
+    # Deduplicate on the upsert key, keeping the last occurrence.
+    before = len(result)
+    result = result.drop_duplicates(
+        subset=["indicator_id", "lad_code", "reference_period"], keep="last"
+    )
+    if len(result) < before:
+        logger.warning(
+            "Dropped %d duplicate rows for %s (%s) — multiple age groups in source",
+            before - len(result),
+            indicator_id,
+            sex_filter,
+        )
+
     logger.info(
         "Normalised %d rows for %s (%s) from Fingertips",
         len(result),
