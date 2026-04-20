@@ -326,6 +326,9 @@ def normalise_fingertips(
     )
 
     result = result.dropna(subset=["value"])
+    result = result.drop_duplicates(
+        subset=["indicator_id", "lad_code", "reference_period"], keep="last"
+    )
 
     logger.info(
         "Normalised %d rows for %s (%s) from Fingertips",
