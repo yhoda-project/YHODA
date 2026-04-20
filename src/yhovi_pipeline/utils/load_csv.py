@@ -15,7 +15,7 @@ Or import and call ``load_dataset()`` directly.
 from __future__ import annotations
 
 import re
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 import pandas as pd
 from sqlalchemy import create_engine
@@ -26,7 +26,7 @@ from yhovi_pipeline.db.models import Indicator
 
 # Map dataset codes to their indicator metadata.
 # indicator_id is a short machine-readable key; indicator_name is human-readable.
-DATASET_REGISTRY: dict[str, dict] = {
+DATASET_REGISTRY: dict[str, dict[str, str]] = {
     "eejer": {
         "indicator_id": "employment_rate",
         "indicator_name": "Employment rate",
@@ -398,7 +398,7 @@ def wide_to_long(df: pd.DataFrame, dataset_code: str) -> pd.DataFrame:
     long = long[long["LAD_Code"].isin(YORKSHIRE_LAD_CODES)]
     long = long.dropna(subset=["value"])
 
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     result = pd.DataFrame(
         {
             "indicator_id": meta["indicator_id"],
@@ -546,7 +546,7 @@ def load_long_dataset(
     df = df[df[lad_code_col].isin(YORKSHIRE_LAD_CODES)]
     df = df.dropna(subset=[value_col])
 
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     result = pd.DataFrame(
         {
             "indicator_id": meta["indicator_id"],

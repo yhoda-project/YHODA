@@ -16,7 +16,7 @@ from yhovi_pipeline.tasks.transform.normalise import normalise_nomis_aps
 from yhovi_pipeline.tasks.transform.validate import validate_schema
 
 # Map APS variable keys to dataset metadata for the indicator table.
-APS_DATASETS: dict[str, dict] = {
+APS_DATASETS: dict[str, dict[str, str]] = {
     "employment_rate": {
         "indicator_id": "employment_rate",
         "indicator_name": "Employment rate",
@@ -94,7 +94,7 @@ def employment_jobs_flow(time: str = "latest") -> None:
                 dataset_code=dataset_code,
                 source="nomis",
                 status=ExtractionStatus.SUCCESS,
-                rows_extracted=len(raw_df),
+                rows_extracted=len(raw_df),  # type: ignore[arg-type]
                 rows_loaded=rows_loaded,
             )
 

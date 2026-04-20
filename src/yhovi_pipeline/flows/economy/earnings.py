@@ -58,7 +58,7 @@ def earnings_flow(time: str = "latest") -> None:
             dataset_code=DATASET_CODE,
             source="nomis",
             status=ExtractionStatus.SUCCESS,
-            rows_extracted=len(raw_df),
+            rows_extracted=len(raw_df),  # type: ignore[arg-type]
             rows_loaded=rows_loaded,
         )
 

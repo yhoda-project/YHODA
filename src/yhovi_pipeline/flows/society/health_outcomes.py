@@ -27,6 +27,8 @@ Datasets loaded:
 
 from __future__ import annotations
 
+from typing import Any
+
 from prefect import flow
 from prefect.task_runners import ThreadPoolTaskRunner
 
@@ -44,7 +46,7 @@ from yhovi_pipeline.tasks.transform.validate import validate_schema
 # Each entry maps an internal dataset code to the Fingertips indicator ID,
 # the sex dimension to filter on, and the metadata written to the DB.
 # ---------------------------------------------------------------------------
-HEALTH_DATASETS: dict[str, dict] = {
+HEALTH_DATASETS: dict[str, dict[str, Any]] = {
     "sheu75": {
         "fingertips_id": 41001,
         "indicator_id": "preventable_mortality_u75",
@@ -134,7 +136,7 @@ def health_outcomes_flow() -> None:
                 dataset_code=dataset_code,
                 source="fingertips",
                 status=ExtractionStatus.SUCCESS,
-                rows_extracted=len(raw_df),
+                rows_extracted=len(raw_df),  # type: ignore[arg-type]
                 rows_loaded=rows_loaded,
             )
 

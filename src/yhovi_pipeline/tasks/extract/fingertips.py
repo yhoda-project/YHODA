@@ -15,7 +15,7 @@ import logging
 from io import StringIO
 
 import pandas as pd
-import requests
+import requests  # type: ignore[import-untyped]
 from prefect import task
 from prefect.logging import get_run_logger
 
@@ -41,7 +41,7 @@ FINGERTIPS_REQUIRED_COLUMNS = [
 ]
 
 
-def _get_logger():
+def _get_logger() -> logging.Logger:
     try:
         return get_run_logger()
     except Exception:

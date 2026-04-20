@@ -13,7 +13,7 @@ import logging
 from io import StringIO
 
 import pandas as pd
-import requests
+import requests  # type: ignore[import-untyped]
 from prefect import task
 from prefect.logging import get_run_logger
 
@@ -22,7 +22,7 @@ from yhovi_pipeline.config import get_settings
 _logger = logging.getLogger(__name__)
 
 
-def _get_logger():
+def _get_logger() -> logging.Logger:
     """Return the Prefect run logger if available, else a standard logger."""
     try:
         return get_run_logger()
@@ -57,7 +57,7 @@ def _build_nomis_url(
     time: str = "latest",
     select: str | None = None,
     uid: str | None = None,
-    **extra_params,
+    **extra_params: object,
 ) -> str:
     """Build a Nomis API CSV request URL.
 

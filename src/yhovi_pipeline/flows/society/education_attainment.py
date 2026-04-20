@@ -16,7 +16,7 @@ from yhovi_pipeline.tasks.transform.normalise import normalise_nomis_aps
 from yhovi_pipeline.tasks.transform.validate import validate_schema
 
 # APS qualification variables mapped to indicator metadata.
-QUALIFICATION_DATASETS: dict[str, dict] = {
+QUALIFICATION_DATASETS: dict[str, dict[str, str]] = {
     "qualifications_rqf4plus": {
         "indicator_id": "qualifications_rqf4plus",
         "indicator_name": "% aged 16-64 qualified to RQF level 4 and above",
@@ -79,7 +79,7 @@ def education_attainment_flow(time: str = "latestMinus1,latest") -> None:
                 dataset_code=dataset_code,
                 source="nomis",
                 status=ExtractionStatus.SUCCESS,
-                rows_extracted=len(raw_df),
+                rows_extracted=len(raw_df),  # type: ignore[arg-type]
                 rows_loaded=rows_loaded,
             )
 

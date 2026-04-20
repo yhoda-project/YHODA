@@ -6,12 +6,12 @@ an idempotent upsert strategy (INSERT … ON CONFLICT UPDATE).
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pandas as pd
 from prefect import task
 from prefect.logging import get_run_logger
-from sqlalchemy import create_engine
+from sqlalchemy import Engine, create_engine
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
@@ -19,7 +19,7 @@ from yhovi_pipeline.config import get_settings
 from yhovi_pipeline.db.models import DatasetMetadata, ExtractionStatus, Indicator
 
 
-def _get_engine():
+def _get_engine() -> Engine:
     """Create a SQLAlchemy engine from settings."""
     settings = get_settings()
     return create_engine(settings.database_url.get_secret_value())
@@ -52,7 +52,7 @@ def upsert_indicators(df: pd.DataFrame, dataset_code: str) -> int:
         logger.warning("No records to upsert for %s", dataset_code)
         return 0
 
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     for rec in records:
         rec.setdefault("created_at", now)
         rec["updated_at"] = now
@@ -107,7 +107,7 @@ def write_metadata(
     logger = get_run_logger()
     engine = _get_engine()
 
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     record = DatasetMetadata(
         dataset_code=dataset_code,
         source=source,

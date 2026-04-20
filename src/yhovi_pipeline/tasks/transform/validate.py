@@ -17,7 +17,7 @@ from yhovi_pipeline.config import YORKSHIRE_LAD_CODES
 _logger = logging.getLogger(__name__)
 
 
-def _get_logger():
+def _get_logger() -> logging.Logger:
     try:
         return get_run_logger()
     except Exception:
