@@ -36,6 +36,9 @@ _NON_YORKSHIRE = "E09000001"  # City of London
 _INDICATOR_COLS = {
     "indicator_id",
     "indicator_name",
+    "geography_code",
+    "geography_name",
+    "geography_level",
     "lad_code",
     "lad_name",
     "reference_period",
@@ -43,6 +46,9 @@ _INDICATOR_COLS = {
     "unit",
     "source",
     "dataset_code",
+    "breakdown_category",
+    "is_forecast",
+    "forecast_model",
     "created_at",
     "updated_at",
 }

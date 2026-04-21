@@ -89,17 +89,25 @@ def normalise_to_indicator(
     logger = _get_logger()
 
     now = datetime.now(UTC)
+    lad_codes = df[lad_col].values
+    lad_names = df[lad_name_col].values
     result = pd.DataFrame(
         {
             "indicator_id": indicator_id,
             "indicator_name": indicator_name,
-            "lad_code": df[lad_col].values,
-            "lad_name": df[lad_name_col].values,
+            "geography_code": lad_codes,
+            "geography_name": lad_names,
+            "geography_level": "lad",
+            "lad_code": lad_codes,
+            "lad_name": lad_names,
             "reference_period": reference_period,
             "value": pd.to_numeric(df[value_col], errors="coerce"),
             "unit": unit,
             "source": source,
             "dataset_code": dataset_code,
+            "breakdown_category": "",
+            "is_forecast": False,
+            "forecast_model": None,
             "created_at": now,
             "updated_at": now,
         }
@@ -139,17 +147,25 @@ def normalise_nomis_aps(
     logger = _get_logger()
 
     now = datetime.now(UTC)
+    lad_codes = df["GEOGRAPHY_CODE"].values
+    lad_names = df["GEOGRAPHY_NAME"].values
     result = pd.DataFrame(
         {
             "indicator_id": indicator_id,
             "indicator_name": indicator_name,
-            "lad_code": df["GEOGRAPHY_CODE"].values,
-            "lad_name": df["GEOGRAPHY_NAME"].values,
+            "geography_code": lad_codes,
+            "geography_name": lad_names,
+            "geography_level": "lad",
+            "lad_code": lad_codes,
+            "lad_name": lad_names,
             "reference_period": df["DATE_NAME"].astype(str).apply(_parse_nomis_date),
             "value": pd.to_numeric(df["OBS_VALUE"], errors="coerce"),
             "unit": unit,
             "source": "nomis",
             "dataset_code": dataset_code,
+            "breakdown_category": "",
+            "is_forecast": False,
+            "forecast_model": None,
             "created_at": now,
             "updated_at": now,
         }
@@ -182,17 +198,25 @@ def normalise_nomis_ashe(
     logger = _get_logger()
 
     now = datetime.now(UTC)
+    lad_codes = df["GEOGRAPHY_CODE"].values
+    lad_names = df["GEOGRAPHY_NAME"].values
     result = pd.DataFrame(
         {
             "indicator_id": "median_weekly_earnings",
             "indicator_name": "Median gross weekly earnings",
-            "lad_code": df["GEOGRAPHY_CODE"].values,
-            "lad_name": df["GEOGRAPHY_NAME"].values,
+            "geography_code": lad_codes,
+            "geography_name": lad_names,
+            "geography_level": "lad",
+            "lad_code": lad_codes,
+            "lad_name": lad_names,
             "reference_period": df["DATE_NAME"].astype(str).apply(_parse_nomis_date),
             "value": pd.to_numeric(df["OBS_VALUE"], errors="coerce"),
             "unit": "£",
             "source": "nomis",
             "dataset_code": dataset_code,
+            "breakdown_category": "",
+            "is_forecast": False,
+            "forecast_model": None,
             "created_at": now,
             "updated_at": now,
         }
@@ -234,17 +258,25 @@ def normalise_nomis_annual(
     logger = _get_logger()
 
     now = datetime.now(UTC)
+    lad_codes = df["GEOGRAPHY_CODE"].values
+    lad_names = df["GEOGRAPHY_NAME"].values
     result = pd.DataFrame(
         {
             "indicator_id": indicator_id,
             "indicator_name": indicator_name,
-            "lad_code": df["GEOGRAPHY_CODE"].values,
-            "lad_name": df["GEOGRAPHY_NAME"].values,
+            "geography_code": lad_codes,
+            "geography_name": lad_names,
+            "geography_level": "lad",
+            "lad_code": lad_codes,
+            "lad_name": lad_names,
             "reference_period": df["DATE_NAME"].astype(str).apply(_parse_nomis_date),
             "value": pd.to_numeric(df["OBS_VALUE"], errors="coerce"),
             "unit": unit,
             "source": "nomis",
             "dataset_code": dataset_code,
+            "breakdown_category": "",
+            "is_forecast": False,
+            "forecast_model": None,
             "created_at": now,
             "updated_at": now,
         }
@@ -375,17 +407,25 @@ def normalise_fingertips(
     df["reference_period"] = df["Time period"].astype(str).apply(_parse_fingertips_period)
 
     now = datetime.now(UTC)
+    lad_codes = df["Area Code"].values
+    lad_names = df["Area Name"].values
     result = pd.DataFrame(
         {
             "indicator_id": indicator_id,
             "indicator_name": indicator_name,
-            "lad_code": df["Area Code"].values,
-            "lad_name": df["Area Name"].values,
+            "geography_code": lad_codes,
+            "geography_name": lad_names,
+            "geography_level": "lad",
+            "lad_code": lad_codes,
+            "lad_name": lad_names,
             "reference_period": df["reference_period"].values,
             "value": pd.to_numeric(df["Value"], errors="coerce"),
             "unit": unit,
             "source": "fingertips",
             "dataset_code": dataset_code,
+            "breakdown_category": "",
+            "is_forecast": False,
+            "forecast_model": None,
             "created_at": now,
             "updated_at": now,
         }

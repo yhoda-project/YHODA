@@ -17,9 +17,10 @@ Design notes
 from __future__ import annotations
 
 import enum
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy import (
+    Boolean,
     Date,
     DateTime,
     Enum,
@@ -71,13 +72,26 @@ class ExtractionStatus(enum.StrEnum):
 
 
 class Indicator(Base):
-    """One row per indicator x LAD x reference period observation.
+    """One row per indicator x geography x reference period x breakdown category.
 
-    This is the central fact table.  Each row stores a single statistical
-    value (e.g. "claimant rate for Bradford, April 2024").
+    The central fact table. Each row stores a single statistical value, e.g.
+    "employment rate for Bradford LAD, April 2024" or "businesses in
+    manufacturing for Bradford MSOA E02002330, 2023".
 
-    The unique index on ``(indicator_id, lad_code, reference_period)``
-    supports idempotent upsert operations in the load tasks.
+    Geography levels
+    ----------------
+    ``lad``  — Local Authority District (the original and primary level).
+    ``msoa`` — Middle Super Output Area (Industry / Jobs dashboards).
+    ``lsoa`` — Lower Super Output Area (Neighbourhoods dashboard).
+
+    Breakdown dimension
+    -------------------
+    ``breakdown_category`` is ``""`` for aggregate (non-breakdown) indicators.
+    For sector or category breakdowns it holds the label, e.g.
+    ``"Manufacturing"``.  Using an empty string rather than NULL ensures the
+    unique index behaves correctly across all PostgreSQL versions.
+
+    Upsert key: ``(indicator_id, geography_code, reference_period, breakdown_category)``.
     """
 
     __tablename__ = "indicator"
@@ -85,25 +99,39 @@ class Indicator(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
     indicator_id: Mapped[str] = mapped_column(String(100), nullable=False)
-    """Short machine-readable identifier, e.g. ``"claimant_rate"``."""
+    """Short machine-readable identifier, e.g. ``"employment_rate"``."""
 
     indicator_name: Mapped[str] = mapped_column(String(255), nullable=False)
     """Human-readable display name."""
 
+    # --- Geography ---------------------------------------------------------
+
+    geography_code: Mapped[str] = mapped_column(String(9), nullable=False)
+    """ONS GSS code for the specific geography of this row (LAD, MSOA, or LSOA)."""
+
+    geography_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    """Human-readable name of the specific geography."""
+
+    geography_level: Mapped[str] = mapped_column(String(10), nullable=False)
+    """Hierarchy level: ``'lad'``, ``'msoa'``, or ``'lsoa'``."""
+
     lad_code: Mapped[str] = mapped_column(String(9), nullable=False)
-    """ONS GSS code for the Local Authority District, e.g. ``"E08000032"``."""
+    """Parent LAD GSS code — for roll-up queries across all geography levels.
+    Equals ``geography_code`` for LAD-level rows."""
 
     lad_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    """Human-readable LAD name, e.g. ``"Bradford"``."""
+    """Parent LAD name. Equals ``geography_name`` for LAD-level rows."""
+
+    # --- Observation -------------------------------------------------------
 
     reference_period: Mapped[date] = mapped_column(Date, nullable=False)
     """The date the observation relates to (first day of the period)."""
 
     value: Mapped[float | None] = mapped_column(nullable=True)
-    """The numeric value.  ``NULL`` when suppressed for disclosure control."""
+    """Numeric value. ``NULL`` when suppressed for disclosure control."""
 
     unit: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    """Unit of measurement, e.g. ``"rate"`` or ``"count"``."""
+    """Unit of measurement, e.g. ``"%"`` or ``"£"``."""
 
     source: Mapped[str | None] = mapped_column(String(100), nullable=True)
     """Source system identifier, e.g. ``"nomis"`` or ``"fingertips"``."""
@@ -111,19 +139,44 @@ class Indicator(Base):
     dataset_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
     """Dataset / series code within the source system."""
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    # --- Breakdown dimension -----------------------------------------------
+
+    breakdown_category: Mapped[str] = mapped_column(
+        String(100), nullable=False, server_default="''"
+    )
+    """Sector or category label for breakdown indicators (e.g. ``"Manufacturing"``).
+    Empty string for non-breakdown (aggregate) indicators."""
+
+    # --- Forecast ----------------------------------------------------------
+
+    is_forecast: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, server_default="false"
+    )
+    """``True`` for model-generated forecast values; ``False`` for actuals."""
+
+    forecast_model: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    """Name of the forecasting model, populated when ``is_forecast`` is ``True``."""
+
+    # --- Audit -------------------------------------------------------------
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=lambda: datetime.now(UTC)
+    )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, nullable=False, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
 
     __table_args__ = (
         Index(
             "ix_indicator_upsert_key",
             "indicator_id",
-            "lad_code",
+            "geography_code",
             "reference_period",
+            "breakdown_category",
             unique=True,
         ),
+        Index("ix_indicator_lad_code", "lad_code"),
+        Index("ix_indicator_geography_level", "geography_level"),
     )
 
 

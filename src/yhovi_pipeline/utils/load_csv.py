@@ -456,17 +456,25 @@ def wide_to_long(df: pd.DataFrame, dataset_code: str) -> pd.DataFrame:
     long = long.dropna(subset=["value"])
 
     now = datetime.now(UTC)
+    lad_codes = long["LAD_Code"]
+    lad_names = long["LAD_Name"]
     result = pd.DataFrame(
         {
             "indicator_id": meta["indicator_id"],
             "indicator_name": meta["indicator_name"],
-            "lad_code": long["LAD_Code"],
-            "lad_name": long["LAD_Name"],
+            "geography_code": lad_codes,
+            "geography_name": lad_names,
+            "geography_level": "lad",
+            "lad_code": lad_codes,
+            "lad_name": lad_names,
             "reference_period": long["year"].apply(lambda y: date(y, 1, 1)),
             "value": long["value"].astype(float),
             "unit": meta["unit"],
             "source": meta["source"],
             "dataset_code": dataset_code,
+            "breakdown_category": "",
+            "is_forecast": False,
+            "forecast_model": None,
             "created_at": now,
             "updated_at": now,
         }
@@ -498,9 +506,17 @@ def load_dataset(path: str, dataset_code: str) -> int:
 
     stmt = pg_insert(Indicator).values(records)
     stmt = stmt.on_conflict_do_update(
-        index_elements=["indicator_id", "lad_code", "reference_period"],
+        index_elements=[
+            "indicator_id",
+            "geography_code",
+            "reference_period",
+            "breakdown_category",
+        ],
         set_={
             "indicator_name": stmt.excluded.indicator_name,
+            "geography_name": stmt.excluded.geography_name,
+            "geography_level": stmt.excluded.geography_level,
+            "lad_code": stmt.excluded.lad_code,
             "lad_name": stmt.excluded.lad_name,
             "value": stmt.excluded.value,
             "unit": stmt.excluded.unit,
@@ -615,17 +631,25 @@ def load_long_dataset(
     df = df.dropna(subset=[value_col])
 
     now = datetime.now(UTC)
+    lad_codes = df[lad_code_col].values
+    lad_names = df[lad_name_col].values
     result = pd.DataFrame(
         {
             "indicator_id": meta["indicator_id"],
             "indicator_name": meta["indicator_name"],
-            "lad_code": df[lad_code_col].values,
-            "lad_name": df[lad_name_col].values,
+            "geography_code": lad_codes,
+            "geography_name": lad_names,
+            "geography_level": "lad",
+            "lad_code": lad_codes,
+            "lad_name": lad_names,
             "reference_period": df[year_col].apply(lambda y: date(int(y), 1, 1)),
             "value": pd.to_numeric(df[value_col], errors="coerce"),
             "unit": meta["unit"],
             "source": meta["source"],
             "dataset_code": dataset_code,
+            "breakdown_category": "",
+            "is_forecast": False,
+            "forecast_model": None,
             "created_at": now,
             "updated_at": now,
         }
@@ -639,9 +663,17 @@ def load_long_dataset(
 
     stmt = pg_insert(Indicator).values(records)
     stmt = stmt.on_conflict_do_update(
-        index_elements=["indicator_id", "lad_code", "reference_period"],
+        index_elements=[
+            "indicator_id",
+            "geography_code",
+            "reference_period",
+            "breakdown_category",
+        ],
         set_={
             "indicator_name": stmt.excluded.indicator_name,
+            "geography_name": stmt.excluded.geography_name,
+            "geography_level": stmt.excluded.geography_level,
+            "lad_code": stmt.excluded.lad_code,
             "lad_name": stmt.excluded.lad_name,
             "value": stmt.excluded.value,
             "unit": stmt.excluded.unit,

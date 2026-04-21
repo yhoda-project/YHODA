@@ -32,13 +32,16 @@ def _get_engine() -> Engine:
 def upsert_indicators(df: pd.DataFrame, dataset_code: str) -> int:
     """Upsert rows into the ``indicator`` table.
 
-    Uses the unique index on ``(indicator_id, lad_code, reference_period)``
+    Uses the unique index on
+    ``(indicator_id, geography_code, reference_period, breakdown_category)``
     as the merge key.  Existing rows are updated; new rows are inserted.
 
     Args:
         df: Normalised DataFrame with columns matching the ``Indicator``
-            schema: indicator_id, indicator_name, lad_code, lad_name,
-            reference_period, value, unit, source, dataset_code.
+            schema: indicator_id, indicator_name, geography_code,
+            geography_name, geography_level, lad_code, lad_name,
+            reference_period, value, unit, source, dataset_code,
+            breakdown_category, is_forecast, forecast_model.
         dataset_code: Dataset identifier for logging.
 
     Returns:
@@ -59,14 +62,24 @@ def upsert_indicators(df: pd.DataFrame, dataset_code: str) -> int:
 
     stmt = pg_insert(Indicator).values(records)
     stmt = stmt.on_conflict_do_update(
-        index_elements=["indicator_id", "lad_code", "reference_period"],
+        index_elements=[
+            "indicator_id",
+            "geography_code",
+            "reference_period",
+            "breakdown_category",
+        ],
         set_={
             "indicator_name": stmt.excluded.indicator_name,
+            "geography_name": stmt.excluded.geography_name,
+            "geography_level": stmt.excluded.geography_level,
+            "lad_code": stmt.excluded.lad_code,
             "lad_name": stmt.excluded.lad_name,
             "value": stmt.excluded.value,
             "unit": stmt.excluded.unit,
             "source": stmt.excluded.source,
             "dataset_code": stmt.excluded.dataset_code,
+            "is_forecast": stmt.excluded.is_forecast,
+            "forecast_model": stmt.excluded.forecast_model,
             "updated_at": stmt.excluded.updated_at,
         },
     )
