@@ -231,7 +231,7 @@ class JobsLsoa(Base):
     Source: ONS Inter-Departmental Business Register (IDBR), preprocessed by
     the YHODA team (``yvj_jps_yorkshireandhumber_v1_8.csv``).
 
-    Granularity: LSOA × Year × SIC code.
+    Granularity: LSOA x Year x SIC code.
     Upsert key: ``(lsoa_code, year, sic_code)``.
     """
 
@@ -310,7 +310,7 @@ class IndustryBusiness(Base):
     Source: ONS Inter-Departmental Business Register (IDBR), preprocessed by
     the YHODA team (``yvi_allyh_v1_6.csv``).
 
-    Granularity: Year × MSOA × industry × turnover band.
+    Granularity: Year x MSOA x industry x turnover band.
     Upsert key: ``(year, msoa_code, industry, turnover_band)``.
     """
 
