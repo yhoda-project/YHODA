@@ -24,7 +24,9 @@ from sqlalchemy import (
     Date,
     DateTime,
     Enum,
+    Float,
     Index,
+    Integer,
     MetaData,
     String,
     Text,
@@ -221,6 +223,225 @@ class DatasetMetadata(Base):
     loaded_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+
+class JobsLsoa(Base):
+    """LSOA-level employee counts by SIC code, for the Jobs dashboard.
+
+    Source: ONS Inter-Departmental Business Register (IDBR), preprocessed by
+    the YHODA team (``yvj_jps_yorkshireandhumber_v1_8.csv``).
+
+    Granularity: LSOA × Year × SIC code.
+    Upsert key: ``(lsoa_code, year, sic_code)``.
+    """
+
+    __tablename__ = "jobs_lsoa"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    # --- Geography ---------------------------------------------------------
+
+    lsoa_code: Mapped[str] = mapped_column(String(9), nullable=False)
+    """LSOA 2011 GSS code, e.g. ``"E01007434"``."""
+
+    lsoa_name: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    msoa_code: Mapped[str] = mapped_column(String(9), nullable=False)
+    """Parent MSOA GSS code, e.g. ``"E02006868"``."""
+
+    msoa_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    """ONS-assigned MSOA name."""
+
+    msoa_hcl_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    """Human-coded local name for the MSOA area (may differ from ONS name)."""
+
+    lad_code: Mapped[str] = mapped_column(String(9), nullable=False)
+    lad_name: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    # --- Time --------------------------------------------------------------
+
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    # --- SIC hierarchy -----------------------------------------------------
+
+    sic_code: Mapped[int] = mapped_column(Integer, nullable=False)
+    """Numeric SIC 2007 code, e.g. ``1629``."""
+
+    sic_description: Mapped[str] = mapped_column(String(500), nullable=False)
+    """Full SIC description text, e.g. "Support activities for animal production…"."""
+
+    section: Mapped[str] = mapped_column(String(200), nullable=False)
+    """SIC Section letter label, e.g. "Agriculture, forestry and fishing"."""
+
+    division: Mapped[str] = mapped_column(String(200), nullable=False)
+    """SIC Division label."""
+
+    group_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    """SIC Group label."""
+
+    # --- Value -------------------------------------------------------------
+
+    employees: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    """Employee count; ``NULL`` when suppressed for disclosure control."""
+
+    # --- Audit -------------------------------------------------------------
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    __table_args__ = (
+        Index("ix_jobs_lsoa_upsert_key", "lsoa_code", "year", "sic_code", unique=True),
+        Index("ix_jobs_lsoa_msoa_code", "msoa_code"),
+        Index("ix_jobs_lsoa_lad_code", "lad_code"),
+        Index("ix_jobs_lsoa_year", "year"),
+    )
+
+
+class IndustryBusiness(Base):
+    """MSOA-level business counts by industry and turnover band, for the Industry dashboard.
+
+    Source: ONS Inter-Departmental Business Register (IDBR), preprocessed by
+    the YHODA team (``yvi_allyh_v1_6.csv``).
+
+    Granularity: Year × MSOA × industry × turnover band.
+    Upsert key: ``(year, msoa_code, industry, turnover_band)``.
+    """
+
+    __tablename__ = "industry_business"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    # --- Geography ---------------------------------------------------------
+
+    msoa_code: Mapped[str] = mapped_column(String(9), nullable=False)
+    msoa_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    lad_code: Mapped[str] = mapped_column(String(9), nullable=False)
+    lad_name: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    # --- Breakdown dimensions ----------------------------------------------
+
+    industry: Mapped[str] = mapped_column(String(200), nullable=False)
+    """SIC section label, e.g. ``"Manufacturing"``."""
+
+    turnover_band: Mapped[str] = mapped_column(String(50), nullable=False)
+    """Fine-grained turnover band, e.g. ``"Micro under 250k"``."""
+
+    # --- Value -------------------------------------------------------------
+
+    business_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    """Number of businesses; ``NULL`` when suppressed for disclosure control."""
+
+    # --- Audit -------------------------------------------------------------
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_industry_business_upsert_key",
+            "year",
+            "msoa_code",
+            "industry",
+            "turnover_band",
+            unique=True,
+        ),
+        Index("ix_industry_business_lad_code", "lad_code"),
+        Index("ix_industry_business_year", "year"),
+    )
+
+
+class IndustryBusinessKpi(Base):
+    """Pre-aggregated business count KPIs with 3-year and 8-year change metrics.
+
+    Source: Yorkshire Vitality Industry KPI preprocessed CSV
+    (``yvi_allyh_v1_6_kpis_8.csv``).
+
+    Supports Yorkshire-wide, LAD-level, and MSOA-level aggregates in one table
+    via the ``grouping_level`` discriminator.
+
+    For ``grouping_level = 'yorkshire'``, ``lad_code`` and ``msoa_code`` are
+    empty strings.  For ``grouping_level = 'lad'``, ``msoa_code`` is ``''``.
+    Empty strings rather than NULL keep the unique index deterministic.
+
+    Upsert key:
+        ``(grouping_level, year, lad_code, msoa_code, industry, turnover_band)``
+    """
+
+    __tablename__ = "industry_business_kpi"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    grouping_level: Mapped[str] = mapped_column(String(20), nullable=False)
+    """Aggregation level: ``'yorkshire'``, ``'lad'``, or ``'msoa'``."""
+
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    # --- Geography — '' for higher-level aggregates ------------------------
+
+    lad_code: Mapped[str] = mapped_column(String(9), nullable=False, server_default="''")
+    lad_name: Mapped[str] = mapped_column(String(100), nullable=False, server_default="''")
+    msoa_code: Mapped[str] = mapped_column(String(9), nullable=False, server_default="''")
+    msoa_name: Mapped[str] = mapped_column(String(100), nullable=False, server_default="''")
+
+    # --- Breakdown — '' when not applicable --------------------------------
+
+    industry: Mapped[str] = mapped_column(String(200), nullable=False, server_default="''")
+    turnover_band: Mapped[str] = mapped_column(String(50), nullable=False)
+
+    # --- KPI values --------------------------------------------------------
+
+    business_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    business_lag3: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    """Business count 3 years prior (for 3-year change KPI)."""
+    pct_change_3y: Mapped[float | None] = mapped_column(Float, nullable=True)
+    """Percentage change in business count over 3 years."""
+    business_lag8: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    """Business count 8 years prior (for 8-year change KPI)."""
+    pct_change_8y: Mapped[float | None] = mapped_column(Float, nullable=True)
+    """Percentage change in business count over 8 years."""
+
+    # --- Audit -------------------------------------------------------------
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_industry_kpi_upsert_key",
+            "grouping_level",
+            "year",
+            "lad_code",
+            "msoa_code",
+            "industry",
+            "turnover_band",
+            unique=True,
+        ),
+        Index("ix_industry_kpi_lad_code", "lad_code"),
+        Index("ix_industry_kpi_year", "year"),
+    )
 
 
 class GeoLookup(Base):
