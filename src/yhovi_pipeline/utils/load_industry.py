@@ -115,7 +115,7 @@ def load_industry_business(path: str = GRANULAR_CSV) -> int:
 
     missing = df["lad_code"].isna().sum()
     if missing:
-        print(f"  WARNING: {missing} MSOA codes not in geo_lookup — skipped.")
+        print(f"  WARNING: {missing} MSOA codes not in geo_lookup - skipped.")
     df = df.dropna(subset=["lad_code"]).copy()
 
     # Filter to Yorkshire LADs

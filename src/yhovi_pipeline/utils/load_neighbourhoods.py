@@ -81,7 +81,7 @@ def load_neighbourhoods(path: str = NEIGHBOURHOODS_CSV) -> int:
     # Warn about LSOAs missing from the lookup (boundary mismatch or data error)
     missing = df["lad_code"].isna().sum()
     if missing:
-        print(f"  WARNING: {missing} rows have no geo_lookup match — they will be skipped.")
+        print(f"  WARNING: {missing} rows have no geo_lookup match - they will be skipped.")
     df = df.dropna(subset=["lad_code"])
 
     # Filter to Yorkshire LADs
