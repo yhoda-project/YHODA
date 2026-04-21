@@ -1,0 +1,39 @@
+repos:
+  # ---------------------------------------------------------------------------
+  # File hygiene — catches trivial issues before CI sees them
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml          # validates prefect.yaml, ci.yml, this file
+      - id: check-toml          # validates pyproject.toml
+      - id: check-merge-conflict
+      - id: debug-statements    # catches breakpoint() / import pdb left in
+      - id: check-added-large-files
+        args: [--maxkb=500]     # guard against accidentally staging a CSV
+
+  # ---------------------------------------------------------------------------
+  # Ruff — lint + format (mirrors CI: ruff check / ruff format --check)
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # ---------------------------------------------------------------------------
+  # Mypy — type check (mirrors CI: uv run mypy src/)
+  # Runs as a local hook so it uses the project virtualenv and sqlalchemy plugin.
+  # pass_filenames: false so mypy checks all of src/ together (cross-file types).
+  # ---------------------------------------------------------------------------
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: uv run mypy src/
+        language: system
+        types: [python]
+        pass_filenames: false
