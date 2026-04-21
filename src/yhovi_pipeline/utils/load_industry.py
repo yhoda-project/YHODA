@@ -5,7 +5,8 @@ Sources (in /mnt/yhoda_drive/Shared/2_Yorkshire_Vitality_by_Industry/):
   yvi_allyh_v1_6_kpis_8.csv  → industry_business_kpi (pre-aggregated KPIs)
 
 Expected columns in yvi_allyh_v1_6.csv:
-  Grouping_Level, LAD23NM, Turnover, Industry, MSOA, Year, Business
+  Year, Industry, MSOA, Turnover, Business, MSOA11NM, msoa11hclnm, LAD23NM
+  (all rows are MSOA-level; there is no Grouping_Level column)
 
 Expected columns in yvi_allyh_v1_6_kpis_8.csv:
   Grouping_Level, Year, LAD23NM, MSOA, Turnover, Industry,
@@ -43,9 +44,9 @@ KPI_CSV = f"{INDUSTRY_BASE}/yvi_allyh_v1_6_kpis_8.csv"
 # ---------------------------------------------------------------------------
 
 _GRANULAR_COLS: dict[str, str] = {
-    "grouping_level": "Grouping_Level",
+    "msoa_code": "MSOA",
+    "msoa_name": "MSOA11NM",
     "lad_name": "LAD23NM",
-    "msoa": "MSOA",  # may be a code (E02...) or a name
     "industry": "Industry",
     "turnover_band": "Turnover",
     "year": "Year",
@@ -87,11 +88,11 @@ def _normalise_grouping_level(val: str) -> str:
 
 
 def load_industry_business(path: str = GRANULAR_CSV) -> int:
-    """Load the granular MSOA-level CSV into ``industry_business``.
+    """Load the MSOA-level Industry CSV into ``industry_business``.
 
-    Only rows where ``Grouping_Level`` indicates MSOA level are loaded
-    (LAD/Yorkshire aggregates are not written to this table — they belong
-    in ``industry_business_kpi``).
+    All rows are at MSOA level (no Grouping_Level column).  The MSOA column
+    contains GSS codes; lad_code is resolved via geo_lookup; lad_name is
+    taken directly from LAD23NM.
 
     Args:
         path: Path to the granular CSV file.
@@ -108,39 +109,14 @@ def load_industry_business(path: str = GRANULAR_CSV) -> int:
 
     c = _GRANULAR_COLS
 
-    # Only MSOA-level rows go in industry_business
-    df = df[df[c["grouping_level"]].str.strip().str.lower() == "msoa"].copy()
-    if df.empty:
-        print("  No MSOA-level rows found.")
-        return 0
+    # Resolve MSOA code → lad_code via geo_lookup
+    msoa_lookup = _build_msoa_lad_lookup()[["msoa_code", "lad_code"]]
+    df = df.merge(msoa_lookup, left_on=c["msoa_code"], right_on="msoa_code", how="left")
 
-    # Resolve MSOA → LAD
-    msoa_col = df[c["msoa"]].astype(str)
-    if _is_gss_code(msoa_col):
-        # MSOA column contains GSS codes — join via geo_lookup
-        msoa_lookup = _build_msoa_lad_lookup()
-        merged = df.merge(
-            msoa_lookup,
-            left_on=c["msoa"],
-            right_on="msoa_code",
-            how="left",
-        )
-        missing = merged["lad_code"].isna().sum()
-        if missing:
-            print(f"  WARNING: {missing} MSOA codes not in geo_lookup — skipped.")
-        df = merged.dropna(subset=["lad_code"]).copy()
-        df["_msoa_code"] = df["msoa_code"]
-        df["_msoa_name"] = df["msoa_name"]
-    else:
-        # MSOA column contains names — use lad_name from the CSV directly
-        # and leave msoa_code as the name (best effort; may not match geo_lookup)
-        print("  INFO: MSOA column appears to contain names, not GSS codes.")
-        df["lad_code"] = df[c["lad_name"]].map(
-            get_geo_lookup().groupby("lad_name")["lad_code"].first()
-        )
-        df["lad_name"] = df[c["lad_name"]]
-        df["_msoa_code"] = msoa_col.values  # numpy array avoids index misalignment
-        df["_msoa_name"] = msoa_col.values
+    missing = df["lad_code"].isna().sum()
+    if missing:
+        print(f"  WARNING: {missing} MSOA codes not in geo_lookup — skipped.")
+    df = df.dropna(subset=["lad_code"]).copy()
 
     # Filter to Yorkshire LADs
     df = df[df["lad_code"].isin(YORKSHIRE_LAD_CODES)].copy()
@@ -154,10 +130,10 @@ def load_industry_business(path: str = GRANULAR_CSV) -> int:
     result = pd.DataFrame(
         {
             "year": df[c["year"]].astype(int),
-            "msoa_code": df["_msoa_code"].astype(str),
-            "msoa_name": df["_msoa_name"].astype(str),
+            "msoa_code": df[c["msoa_code"]].astype(str),
+            "msoa_name": df[c["msoa_name"]].astype(str),
             "lad_code": df["lad_code"].astype(str),
-            "lad_name": df["lad_name"].astype(str),
+            "lad_name": df[c["lad_name"]].astype(str),
             "industry": df[c["industry"]].fillna("").astype(str),
             "turnover_band": df[c["turnover_band"]].astype(str),
             "business_count": business.where(business.notna(), None),
