@@ -112,9 +112,7 @@ def upgrade() -> None:
     # Step 6 — Add supporting indexes for common query patterns.
     # ------------------------------------------------------------------
     op.create_index("ix_indicator_lad_code", "indicator", ["lad_code"], unique=False)
-    op.create_index(
-        "ix_indicator_geography_level", "indicator", ["geography_level"], unique=False
-    )
+    op.create_index("ix_indicator_geography_level", "indicator", ["geography_level"], unique=False)
 
 
 def downgrade() -> None:
