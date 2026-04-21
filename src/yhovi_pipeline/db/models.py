@@ -149,9 +149,7 @@ class Indicator(Base):
 
     # --- Forecast ----------------------------------------------------------
 
-    is_forecast: Mapped[bool] = mapped_column(
-        Boolean(), nullable=False, server_default="false"
-    )
+    is_forecast: Mapped[bool] = mapped_column(Boolean(), nullable=False, server_default="false")
     """``True`` for model-generated forecast values; ``False`` for actuals."""
 
     forecast_model: Mapped[str | None] = mapped_column(String(100), nullable=True)
@@ -163,7 +161,10 @@ class Indicator(Base):
         DateTime, nullable=False, default=lambda: datetime.now(UTC)
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
 
     __table_args__ = (
