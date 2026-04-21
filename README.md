@@ -18,7 +18,6 @@ Each month the pipeline automatically:
 2. **Validates and normalises** the data into a consistent schema
 3. **Upserts** the results into a PostgreSQL data warehouse
 4. **Logs** each run's status, row counts, and any errors
-5. 
 ---
 
 ## What's in the Database

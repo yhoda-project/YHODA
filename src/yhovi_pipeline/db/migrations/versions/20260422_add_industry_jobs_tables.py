@@ -93,9 +93,7 @@ def upgrade() -> None:
     op.create_index(
         "ix_industry_business_lad_code", "industry_business", ["lad_code"], unique=False
     )
-    op.create_index(
-        "ix_industry_business_year", "industry_business", ["year"], unique=False
-    )
+    op.create_index("ix_industry_business_year", "industry_business", ["year"], unique=False)
 
     # ------------------------------------------------------------------
     # Table: industry_business_kpi
@@ -126,12 +124,8 @@ def upgrade() -> None:
         ["grouping_level", "year", "lad_code", "msoa_code", "industry", "turnover_band"],
         unique=True,
     )
-    op.create_index(
-        "ix_industry_kpi_lad_code", "industry_business_kpi", ["lad_code"], unique=False
-    )
-    op.create_index(
-        "ix_industry_kpi_year", "industry_business_kpi", ["year"], unique=False
-    )
+    op.create_index("ix_industry_kpi_lad_code", "industry_business_kpi", ["lad_code"], unique=False)
+    op.create_index("ix_industry_kpi_year", "industry_business_kpi", ["year"], unique=False)
 
 
 def downgrade() -> None:

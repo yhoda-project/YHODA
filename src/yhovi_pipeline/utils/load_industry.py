@@ -78,11 +78,7 @@ def _is_gss_code(series: pd.Series) -> bool:
 def _build_msoa_lad_lookup() -> pd.DataFrame:
     """Return a DataFrame mapping msoa_code → lad_code, lad_name, msoa_name."""
     geo = get_geo_lookup()
-    return (
-        geo.groupby("msoa_code")[["lad_code", "lad_name", "msoa_name"]]
-        .first()
-        .reset_index()
-    )
+    return geo.groupby("msoa_code")[["lad_code", "lad_name", "msoa_name"]].first().reset_index()
 
 
 def _normalise_grouping_level(val: str) -> str:
@@ -140,9 +136,7 @@ def load_industry_business(path: str = GRANULAR_CSV) -> int:
         # and leave msoa_code as the name (best effort; may not match geo_lookup)
         print("  INFO: MSOA column appears to contain names, not GSS codes.")
         df["lad_code"] = df[c["lad_name"]].map(
-            get_geo_lookup()
-            .groupby("lad_name")["lad_code"]
-            .first()
+            get_geo_lookup().groupby("lad_name")["lad_code"].first()
         )
         df["lad_name"] = df[c["lad_name"]]
         df["_msoa_code"] = msoa_col.values  # numpy array avoids index misalignment
@@ -244,11 +238,7 @@ def load_industry_kpi(path: str = KPI_CSV) -> int:
         msoa_name_series = merged["msoa_name"].fillna("").astype(str)
     else:
         # MSOA column is a name — use LAD name from CSV; lookup lad_code by name
-        lad_name_to_code = (
-            get_geo_lookup()
-            .groupby("lad_name")["lad_code"]
-            .first()
-        )
+        lad_name_to_code = get_geo_lookup().groupby("lad_name")["lad_code"].first()
         lad_code_series = df[c["lad_name"]].fillna("").map(lad_name_to_code).fillna("").astype(str)
         lad_name_series = df[c["lad_name"]].fillna("").astype(str)
         msoa_code_series = msoa_col

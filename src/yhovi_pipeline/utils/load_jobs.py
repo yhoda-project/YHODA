@@ -22,10 +22,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from yhovi_pipeline.config import YORKSHIRE_LAD_CODES, get_settings
 from yhovi_pipeline.db.models import JobsLsoa
 
-JOBS_CSV = (
-    "/mnt/yhoda_drive/Shared/3_Yorkshire_Vitality_Jobs/"
-    "yvj_jps_yorkshireandhumber_v1_8.csv"
-)
+JOBS_CSV = "/mnt/yhoda_drive/Shared/3_Yorkshire_Vitality_Jobs/yvj_jps_yorkshireandhumber_v1_8.csv"
 
 
 def load_jobs(path: str = JOBS_CSV) -> int:

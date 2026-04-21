@@ -25,15 +25,24 @@ repos:
       - id: ruff-format
 
   # ---------------------------------------------------------------------------
-  # Mypy — type check (mirrors CI: uv run mypy src/)
-  # Runs as a local hook so it uses the project virtualenv and sqlalchemy plugin.
+  # Mypy — type check (mirrors CI: mypy src/)
+  # Uses pre-commit's managed environment so uv does not need to be on PATH.
+  # additional_dependencies supplies the packages mypy must resolve:
+  #   - sqlalchemy[mypy] for the mypy plugin declared in pyproject.toml
+  #   - types-requests for the requests stubs used in extract tasks
+  #   - pydantic-settings for inline types used in config.py
+  # Everything else (prefect, pandas, …) is covered by ignore_missing_imports=true
+  # in pyproject.toml.
   # pass_filenames: false so mypy checks all of src/ together (cross-file types).
   # ---------------------------------------------------------------------------
-  - repo: local
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.15.0
     hooks:
       - id: mypy
-        name: mypy
-        entry: uv run mypy src/
-        language: system
-        types: [python]
+        args: [src/]
+        additional_dependencies:
+          - "sqlalchemy[mypy]>=2.0,<3.0"
+          - "types-requests>=2.31"
+          - "pydantic-settings>=2.0,<3.0"
+          - "prefect>=3.0,<4.0"
         pass_filenames: false

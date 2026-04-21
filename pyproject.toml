@@ -77,3 +77,9 @@ filterwarnings = [
     # unit tests.  The warning is expected and benign — suppressed here for clarity.
     "ignore:Logger 'prefect\\.task_runs' attempted to send logs:UserWarning",
 ]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
+    "pre-commit>=4.5.1",
+]
