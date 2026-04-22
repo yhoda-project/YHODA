@@ -387,7 +387,7 @@ class IndustryBusinessKpi(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
-    grouping_level: Mapped[str] = mapped_column(String(20), nullable=False)
+    grouping_level: Mapped[str] = mapped_column(String(50), nullable=False)
     """Aggregation level: ``'yorkshire'``, ``'lad'``, or ``'msoa'``."""
 
     year: Mapped[int] = mapped_column(Integer, nullable=False)
