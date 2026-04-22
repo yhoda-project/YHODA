@@ -34,7 +34,7 @@ from yhovi_pipeline.config import YORKSHIRE_LAD_CODES, get_settings
 from yhovi_pipeline.db.models import IndustryBusiness, IndustryBusinessKpi
 from yhovi_pipeline.utils.geo_lookups import get_geo_lookup
 
-_BATCH_SIZE = 5_000  # psycopg2 hard limit: 65535 parameters per statement
+_BATCH_SIZE = 3_000  # psycopg2 limit: 65535 params; 3000 rows x 15 cols = 45000
 
 INDUSTRY_BASE = "/mnt/yhoda_drive/Shared/2_Yorkshire_Vitality_by_Industry"
 GRANULAR_CSV = f"{INDUSTRY_BASE}/yvi_allyh_v1_6.csv"

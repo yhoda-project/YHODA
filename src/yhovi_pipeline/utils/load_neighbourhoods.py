@@ -38,7 +38,7 @@ NEIGHBOURHOODS_CSV = (
     "Copy_for_Poppy1_yvn_lsoa2021_v2_1.csv"
 )
 
-_BATCH_SIZE = 5_000  # psycopg2 hard limit: 65535 parameters per statement
+_BATCH_SIZE = 3_000  # psycopg2 limit: 65535 params; 3000 rows x 17 cols = 51000
 
 DATASET_CODE = "yvn_lsoa"
 SOURCE = "ons"
