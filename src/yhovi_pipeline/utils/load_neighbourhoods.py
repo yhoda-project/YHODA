@@ -38,6 +38,8 @@ NEIGHBOURHOODS_CSV = (
     "Copy_for_Poppy1_yvn_lsoa2021_v2_1.csv"
 )
 
+_BATCH_SIZE = 5_000  # psycopg2 hard limit: 65535 parameters per statement
+
 DATASET_CODE = "yvn_lsoa"
 SOURCE = "ons"
 
@@ -125,30 +127,31 @@ def load_neighbourhoods(path: str = NEIGHBOURHOODS_CSV) -> int:
         print("  No valid records to upsert.")
         return 0
 
-    stmt = pg_insert(Indicator).values(records)
-    stmt = stmt.on_conflict_do_update(
-        index_elements=[
-            "indicator_id",
-            "geography_code",
-            "reference_period",
-            "breakdown_category",
-        ],
-        set_={
-            "indicator_name": stmt.excluded.indicator_name,
-            "geography_name": stmt.excluded.geography_name,
-            "geography_level": stmt.excluded.geography_level,
-            "lad_code": stmt.excluded.lad_code,
-            "lad_name": stmt.excluded.lad_name,
-            "value": stmt.excluded.value,
-            "unit": stmt.excluded.unit,
-            "source": stmt.excluded.source,
-            "dataset_code": stmt.excluded.dataset_code,
-            "updated_at": stmt.excluded.updated_at,
-        },
-    )
-
     with engine.begin() as conn:
-        conn.execute(stmt)
+        for i in range(0, len(records), _BATCH_SIZE):
+            batch = records[i : i + _BATCH_SIZE]
+            stmt = pg_insert(Indicator).values(batch)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=[
+                    "indicator_id",
+                    "geography_code",
+                    "reference_period",
+                    "breakdown_category",
+                ],
+                set_={
+                    "indicator_name": stmt.excluded.indicator_name,
+                    "geography_name": stmt.excluded.geography_name,
+                    "geography_level": stmt.excluded.geography_level,
+                    "lad_code": stmt.excluded.lad_code,
+                    "lad_name": stmt.excluded.lad_name,
+                    "value": stmt.excluded.value,
+                    "unit": stmt.excluded.unit,
+                    "source": stmt.excluded.source,
+                    "dataset_code": stmt.excluded.dataset_code,
+                    "updated_at": stmt.excluded.updated_at,
+                },
+            )
+            conn.execute(stmt)
 
     print(f"  Upserted {len(records)} rows into indicator (geography_level='lsoa').")
     return len(records)

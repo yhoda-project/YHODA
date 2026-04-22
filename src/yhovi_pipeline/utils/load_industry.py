@@ -34,6 +34,8 @@ from yhovi_pipeline.config import YORKSHIRE_LAD_CODES, get_settings
 from yhovi_pipeline.db.models import IndustryBusiness, IndustryBusinessKpi
 from yhovi_pipeline.utils.geo_lookups import get_geo_lookup
 
+_BATCH_SIZE = 5_000  # psycopg2 hard limit: 65535 parameters per statement
+
 INDUSTRY_BASE = "/mnt/yhoda_drive/Shared/2_Yorkshire_Vitality_by_Industry"
 GRANULAR_CSV = f"{INDUSTRY_BASE}/yvi_allyh_v1_6.csv"
 KPI_CSV = f"{INDUSTRY_BASE}/yvi_allyh_v1_6_kpis_8.csv"
@@ -147,20 +149,21 @@ def load_industry_business(path: str = GRANULAR_CSV) -> int:
 
     records = result.to_dict(orient="records")
 
-    stmt = pg_insert(IndustryBusiness).values(records)
-    stmt = stmt.on_conflict_do_update(
-        index_elements=["year", "msoa_code", "industry", "turnover_band"],
-        set_={
-            "msoa_name": stmt.excluded.msoa_name,
-            "lad_code": stmt.excluded.lad_code,
-            "lad_name": stmt.excluded.lad_name,
-            "business_count": stmt.excluded.business_count,
-            "updated_at": stmt.excluded.updated_at,
-        },
-    )
-
     with engine.begin() as conn:
-        conn.execute(stmt)
+        for i in range(0, len(records), _BATCH_SIZE):
+            batch = records[i : i + _BATCH_SIZE]
+            stmt = pg_insert(IndustryBusiness).values(batch)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=["year", "msoa_code", "industry", "turnover_band"],
+                set_={
+                    "msoa_name": stmt.excluded.msoa_name,
+                    "lad_code": stmt.excluded.lad_code,
+                    "lad_name": stmt.excluded.lad_name,
+                    "business_count": stmt.excluded.business_count,
+                    "updated_at": stmt.excluded.updated_at,
+                },
+            )
+            conn.execute(stmt)
 
     print(f"  Upserted {len(records)} rows into industry_business.")
     return len(records)
@@ -250,30 +253,31 @@ def load_industry_kpi(path: str = KPI_CSV) -> int:
 
     records = result.to_dict(orient="records")
 
-    stmt = pg_insert(IndustryBusinessKpi).values(records)
-    stmt = stmt.on_conflict_do_update(
-        index_elements=[
-            "grouping_level",
-            "year",
-            "lad_code",
-            "msoa_code",
-            "industry",
-            "turnover_band",
-        ],
-        set_={
-            "lad_name": stmt.excluded.lad_name,
-            "msoa_name": stmt.excluded.msoa_name,
-            "business_count": stmt.excluded.business_count,
-            "business_lag3": stmt.excluded.business_lag3,
-            "pct_change_3y": stmt.excluded.pct_change_3y,
-            "business_lag8": stmt.excluded.business_lag8,
-            "pct_change_8y": stmt.excluded.pct_change_8y,
-            "updated_at": stmt.excluded.updated_at,
-        },
-    )
-
     with engine.begin() as conn:
-        conn.execute(stmt)
+        for i in range(0, len(records), _BATCH_SIZE):
+            batch = records[i : i + _BATCH_SIZE]
+            stmt = pg_insert(IndustryBusinessKpi).values(batch)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=[
+                    "grouping_level",
+                    "year",
+                    "lad_code",
+                    "msoa_code",
+                    "industry",
+                    "turnover_band",
+                ],
+                set_={
+                    "lad_name": stmt.excluded.lad_name,
+                    "msoa_name": stmt.excluded.msoa_name,
+                    "business_count": stmt.excluded.business_count,
+                    "business_lag3": stmt.excluded.business_lag3,
+                    "pct_change_3y": stmt.excluded.pct_change_3y,
+                    "business_lag8": stmt.excluded.business_lag8,
+                    "pct_change_8y": stmt.excluded.pct_change_8y,
+                    "updated_at": stmt.excluded.updated_at,
+                },
+            )
+            conn.execute(stmt)
 
     print(f"  Upserted {len(records)} rows into industry_business_kpi.")
     return len(records)

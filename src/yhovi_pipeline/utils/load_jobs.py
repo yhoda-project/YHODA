@@ -22,6 +22,8 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from yhovi_pipeline.config import YORKSHIRE_LAD_CODES, get_settings
 from yhovi_pipeline.db.models import JobsLsoa
 
+_BATCH_SIZE = 5_000  # psycopg2 hard limit: 65535 parameters per statement
+
 JOBS_CSV = "/mnt/yhoda_drive/Shared/3_Yorkshire_Vitality_Jobs/yvj_jps_yorkshireandhumber_v1_8.csv"
 
 
@@ -81,27 +83,28 @@ def load_jobs(path: str = JOBS_CSV) -> int:
 
     records = result.to_dict(orient="records")
 
-    stmt = pg_insert(JobsLsoa).values(records)
-    stmt = stmt.on_conflict_do_update(
-        index_elements=["lsoa_code", "year", "sic_code"],
-        set_={
-            "lsoa_name": stmt.excluded.lsoa_name,
-            "msoa_code": stmt.excluded.msoa_code,
-            "msoa_name": stmt.excluded.msoa_name,
-            "msoa_hcl_name": stmt.excluded.msoa_hcl_name,
-            "lad_code": stmt.excluded.lad_code,
-            "lad_name": stmt.excluded.lad_name,
-            "sic_description": stmt.excluded.sic_description,
-            "section": stmt.excluded.section,
-            "division": stmt.excluded.division,
-            "group_name": stmt.excluded.group_name,
-            "employees": stmt.excluded.employees,
-            "updated_at": stmt.excluded.updated_at,
-        },
-    )
-
     with engine.begin() as conn:
-        conn.execute(stmt)
+        for i in range(0, len(records), _BATCH_SIZE):
+            batch = records[i : i + _BATCH_SIZE]
+            stmt = pg_insert(JobsLsoa).values(batch)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=["lsoa_code", "year", "sic_code"],
+                set_={
+                    "lsoa_name": stmt.excluded.lsoa_name,
+                    "msoa_code": stmt.excluded.msoa_code,
+                    "msoa_name": stmt.excluded.msoa_name,
+                    "msoa_hcl_name": stmt.excluded.msoa_hcl_name,
+                    "lad_code": stmt.excluded.lad_code,
+                    "lad_name": stmt.excluded.lad_name,
+                    "sic_description": stmt.excluded.sic_description,
+                    "section": stmt.excluded.section,
+                    "division": stmt.excluded.division,
+                    "group_name": stmt.excluded.group_name,
+                    "employees": stmt.excluded.employees,
+                    "updated_at": stmt.excluded.updated_at,
+                },
+            )
+            conn.execute(stmt)
 
     print(f"  Upserted {len(records)} rows into jobs_lsoa.")
     return len(records)
