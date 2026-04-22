@@ -251,14 +251,15 @@ def load_industry_kpi(path: str = KPI_CSV) -> int:
         }
     )
 
-    # pandas promotes int+None columns to float64, turning None into nan.
-    # to_dict() then emits nan for those cells; psycopg2 sends it as a float
-    # and PostgreSQL raises "integer out of range" when casting NaN to integer.
-    # Force these back to Python int/None so to_dict() emits NULL correctly.
-    for col in ("business_count", "business_lag3", "business_lag8"):
-        result[col] = result[col].apply(lambda x: None if pd.isna(x) else int(x))
-
     records = result.to_dict(orient="records")
+    # pandas stores int+None columns as float64, so to_dict() emits float nan
+    # instead of None. PostgreSQL raises "integer out of range" when it tries
+    # to cast nan::float -> integer. Fix inline on the dict (v != v is True
+    # only for IEEE 754 NaN, safe for any Python float).
+    for r in records:
+        for col in ("business_count", "business_lag3", "business_lag8"):
+            v = r[col]
+            r[col] = None if (v is None or (isinstance(v, float) and v != v)) else int(v)
 
     with engine.begin() as conn:
         for i in range(0, len(records), _BATCH_SIZE):
