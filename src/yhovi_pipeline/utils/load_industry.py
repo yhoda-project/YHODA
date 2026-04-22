@@ -251,6 +251,13 @@ def load_industry_kpi(path: str = KPI_CSV) -> int:
         }
     )
 
+    # Drop duplicates on the upsert key — the CSV contains duplicate rows and
+    # ON CONFLICT DO UPDATE cannot affect the same row twice in one statement.
+    result = result.drop_duplicates(
+        subset=["grouping_level", "year", "lad_code", "msoa_code", "industry", "turnover_band"],
+        keep="last",
+    )
+
     records = result.to_dict(orient="records")
     # pandas stores int+None columns as float64, so to_dict() emits float nan
     # instead of None. PostgreSQL raises "integer out of range" when it tries
