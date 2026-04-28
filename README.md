@@ -1,6 +1,6 @@
 # Yorkshire Vitality Observatory — Data Pipeline
 
-> **YHODA** — Yorkshire & Humber Office for Data Analytics
+> YHODA — Yorkshire & Humber Office for Data Analytics
 > A Prefect v3 ETL pipeline that collects, transforms, and warehouses socioeconomic,
 > health, and environmental indicators for Yorkshire Local Authority Districts into a
 > central PostgreSQL database.
@@ -14,21 +14,26 @@ and its [Yorkshire Vitality Suite](https://yorkshireportal.org/vitality-suite) d
 
 Each month the pipeline automatically:
 
-1. **Pulls fresh data** from source APIs (e.g. NOMIS labour market statistics)
-2. **Validates and normalises** the data into a consistent schema
-3. **Upserts** the results into a PostgreSQL data warehouse
-4. **Logs** each run's status, row counts, and any errors
+1. Pulls fresh data from source APIs (e.g. NOMIS labour market statistics)
+2. Validates and normalises the data into a consistent schema
+3. Upserts the results into a PostgreSQL data warehouse
+4. Logs each run's status, row counts, and any errors
+
+Static datasets (preprocessed CSVs on the shared drive) are loaded once per
+environment using the utility scripts described below.
+
 ---
 
 ## What's in the Database
 
-The database holds **44 indicators** across three domains, covering 15 Yorkshire LADs:
+The database holds indicators across three domains, covering all 22 Yorkshire LADs,
+with data at LAD, MSOA, and LSOA geography levels.
 
-| Domain | Indicators | Examples                                                   |
-|--------|-----------|------------------------------------------------------------|
-| **Economy** | 10 | Employment rate, unemployment rate, median weekly earnings |
-| **Society** | 22 | Life expectancy, healthy life expectancy, qualifications   |
-| **Environment** | 6 | CO₂ emissions per capita, household waste, recycling rate  |
+| Domain | Examples |
+|--------|----------|
+| Economy | Employment rate, median weekly earnings, business counts, jobs by SIC code |
+| Society | Life expectancy, healthy life expectancy, qualifications, LSOA neighbourhood indicators |
+| Environment | Greenhouse gas emissions, healthy life expectancy by sex |
 
 Full indicator list: see [`src/yhovi_pipeline/utils/load_csv.py`](src/yhovi_pipeline/utils/load_csv.py) → `DATASET_REGISTRY`.
 
@@ -36,11 +41,16 @@ Full indicator list: see [`src/yhovi_pipeline/utils/load_csv.py`](src/yhovi_pipe
 
 | Table | Purpose |
 |-------|---------|
-| `indicator` | One row per indicator × LAD × year — the main fact table |
+| `indicator` | Central fact table — one row per indicator × geography × period × breakdown category |
 | `dataset_metadata` | Audit log of every pipeline run (rows loaded, status, errors) |
-| `geo_lookup` | LSOA → MSOA → LAD hierarchy for geography aggregation |
+| `geo_lookup` | LSOA → MSOA → LAD → Region hierarchy for geography aggregation |
+| `jobs_lsoa` | LSOA-level employee counts by SIC code (Jobs dashboard) |
+| `industry_business` | MSOA-level business counts by industry and turnover band (Industry dashboard) |
+| `industry_business_kpi` | Pre-aggregated 3-year and 8-year business change KPIs (Industry dashboard) |
 
-The upsert key on `indicator` is `(indicator_id, lad_code, reference_period)` —
+See [docs/entity-relationship-diagram.md](docs/entity-relationship-diagram.md) for the full ERD.
+
+The upsert key on `indicator` is `(indicator_id, geography_code, reference_period, breakdown_category)` —
 re-running a flow updates existing rows rather than creating duplicates.
 
 ---
@@ -70,14 +80,14 @@ Source APIs / CSVs
 
 | Flow | Datasets | Source | Status |
 |------|----------|--------|--------|
-| `economy/employment-jobs` | Employment, unemployment, self-employment, inactivity rates | Nomis APS | **Live — runs monthly** |
-| `economy/earnings` | Median gross weekly pay | Nomis ASHE | **Live — runs monthly** |
-| `society/education-attainment` | RQF4+ qualifications, no qualifications | Nomis APS | **Live — runs monthly** |
-| `society/health-outcomes` | Life expectancy, healthy life expectancy, preventable mortality | NHS Fingertips | In development |
+| `economy/employment-jobs` | Employment, unemployment, self-employment, inactivity rates | Nomis APS | Live — runs monthly |
+| `economy/earnings` | Median gross weekly pay | Nomis ASHE | Live — runs monthly |
+| `society/education-attainment` | RQF4+ qualifications, no qualifications | Nomis APS | Live — runs monthly |
+| `society/health-outcomes` | Life expectancy (M/F), healthy life expectancy (M/F), preventable mortality | NHS Fingertips | Live — runs monthly |
 | `economy/claimant-count` | Children in low income, PIP claimants | DWP Stat-Xplore | Pending API key |
 | All others | Business demography, GVA, housing, crime, environment, etc. | ONS, DfE, Ofcom, BEIS, Sport England | Static — loaded from CSV; no live API |
 
-All live deployments run on the **1st of each month at 06:00 Europe/London**.
+All live deployments run on the 1st of each month at 06:00 Europe/London.
 
 ---
 
@@ -107,7 +117,7 @@ cp .env.example .env
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DATABASE_URL` | **Yes** | SQLAlchemy URL, e.g. `postgresql+psycopg2://user:pass@host/dbname` |
+| `DATABASE_URL` | Yes | SQLAlchemy URL, e.g. `postgresql+psycopg2://user:pass@host/dbname` |
 | `DWP_API_KEY` | No | DWP Stat-Xplore API key (only needed for claimant-count flow) |
 | `NOMIS_API_KEY` | No | Nomis API key — public endpoints work without one, key gives higher rate limits |
 | `PREFECT_API_URL` | No | URL of your Prefect server (only needed to register/run deployments) |
@@ -126,18 +136,28 @@ uv run alembic upgrade head
 uv run python -m yhovi_pipeline.utils.seed_geo_lookup
 ```
 
-This loads the ONS LSOA → MSOA → LAD hierarchy from the shared drive. Only needed
-once per environment.
+Loads the ONS LSOA → MSOA → LAD hierarchy. Only needed once per environment.
 
 ### 5. (One-time) Load historical data from preprocessed CSVs
 
 ```bash
+# Indicator-level data (LAD geography)
 uv run python -m yhovi_pipeline.utils.load_csv
+
+# Jobs dashboard (LSOA-level employee counts by SIC code)
+uv run python -m yhovi_pipeline.utils.load_jobs
+
+# Industry dashboard (MSOA-level business counts + KPIs)
+uv run python -m yhovi_pipeline.utils.load_industry
+
+# Neighbourhoods dashboard (LSOA-level indicators)
+uv run python -m yhovi_pipeline.utils.load_neighbourhoods
 ```
 
-Reads the preprocessed CSV files from the shared drive and loads ~8,000
-historical rows into the database. Only needed once per environment — thereafter
-the monthly flows keep data current.
+All loaders read from the shared drive (`/mnt/yhoda_drive/Shared/`). Only needed
+once per environment — thereafter the monthly flows keep indicator data current.
+The Jobs, Industry, and Neighbourhoods loaders should be re-run whenever new
+versions of the source CSVs are placed on the shared drive.
 
 ### 6. Register deployments with Prefect
 
@@ -188,7 +208,8 @@ YHODA/
 │   └── yhovi_pipeline/
 │       ├── config.py                  # Settings via pydantic-settings; use get_settings()
 │       ├── db/
-│       │   ├── models.py              # ORM: Indicator, DatasetMetadata, GeoLookup
+│       │   ├── models.py              # ORM: Indicator, DatasetMetadata, GeoLookup,
+│       │   │                          #       JobsLsoa, IndustryBusiness, IndustryBusinessKpi
 │       │   └── migrations/            # Alembic migration history
 │       ├── flows/
 │       │   ├── economy/               # employment_jobs, earnings, claimant_count, business_demography, gdp_gva
@@ -200,14 +221,21 @@ YHODA/
 │       │   ├── transform/             # validate, normalise, geo
 │       │   └── load/                  # database (upsert_indicators, write_metadata)
 │       └── utils/
-│           ├── load_csv.py            # One-time historical data loader
+│           ├── load_csv.py            # One-time loader for indicator-level CSVs
+│           ├── load_jobs.py           # One-time loader for jobs_lsoa (Jobs dashboard)
+│           ├── load_industry.py       # One-time loader for industry_business + KPI tables
+│           ├── load_neighbourhoods.py # One-time loader for LSOA indicator data
 │           ├── seed_geo_lookup.py     # One-time geo hierarchy seeder
 │           └── geo_lookups.py         # LRU-cached LSOA → LAD lookup
+├── docs/
+│   ├── entity-relationship-diagram.md # Database ERD (Mermaid)
+│   └── tutorial-pgadmin.md            # How to connect and query the database with pgAdmin
 ├── tests/
 │   ├── unit/
 │   └── integration/
 ├── .github/workflows/ci.yml           # lint → test → deploy on push to main
-├── prefect.yaml                       # 14 Prefect deployment definitions
+├── .pre-commit-config.yaml            # ruff, mypy, and file hygiene hooks
+├── prefect.yaml                       # Prefect deployment definitions
 ├── alembic.ini
 ├── pyproject.toml
 └── .env.example
@@ -250,17 +278,17 @@ automatically on merge to `main`.
 
 ## How to Add a New Data Source
 
-1. **Create an extract task** in `tasks/extract/<source>.py` — follow the Nomis module as a template. Use `@task(name="extract/<source>/...", retries=3, retry_delay_seconds=60)`.
+1. Create an extract task in `tasks/extract/<source>.py` — follow the Nomis module as a template. Use `@task(name="extract/<source>/...", retries=3, retry_delay_seconds=60)`.
 
-2. **Add a normaliser** in `tasks/transform/normalise.py` if the source has a non-standard date or value format.
+2. Add a normaliser in `tasks/transform/normalise.py` if the source has a non-standard date or value format.
 
-3. **Create a flow** in the appropriate domain directory. Use `@flow(name="<domain>/<name>", task_runner=ThreadPoolTaskRunner(max_workers=4))`.
+3. Create a flow in the appropriate domain directory. Use `@flow(name="<domain>/<name>", task_runner=ThreadPoolTaskRunner(max_workers=4))`.
 
-4. **Register the deployment** in `prefect.yaml` following the existing pattern.
+4. Register the deployment in `prefect.yaml` following the existing pattern.
 
-5. **Add the indicator(s)** to `DATASET_REGISTRY` in `utils/load_csv.py`.
+5. Add the indicator(s) to `DATASET_REGISTRY` in `utils/load_csv.py`.
 
-6. **Write unit tests** in `tests/unit/` for your transform logic.
+6. Write unit tests in `tests/unit/` for your transform logic.
 
 7. Open a PR — CI will lint, test, and deploy automatically on merge.
 

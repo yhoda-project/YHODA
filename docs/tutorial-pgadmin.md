@@ -108,7 +108,7 @@ Results appear in the panel below.
 
 ### Useful queries
 
-**How many rows are in each table?**
+How many rows are in each table?
 ```sql
 SELECT 'indicator' AS tbl, COUNT(*) FROM indicator
 UNION ALL SELECT 'jobs_lsoa', COUNT(*) FROM jobs_lsoa

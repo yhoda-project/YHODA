@@ -12,11 +12,11 @@ receives security fixes. No versioned releases have been published yet.
 
 ## Reporting a Vulnerability
 
-**Please do not report security vulnerabilities through public GitHub issues.**
+Please do not report security vulnerabilities through public GitHub issues.
 
 Report vulnerabilities privately by emailing:
 
-**yhoda@sheffield.ac.uk**
+yhoda@sheffield.ac.uk
 
 Include as much of the following as possible:
 
